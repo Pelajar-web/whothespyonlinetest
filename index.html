@@ -739,7 +739,9 @@
 /* Skill Guardian (tombol melayang pojok kanan bawah — hanya saat diskusi) */
 .ol-fab { position:fixed; right:14px; bottom:calc(18px + env(safe-area-inset-bottom, 0px)); z-index:9000; width:auto; margin:0; padding:12px 18px; border-radius:999px; background:linear-gradient(135deg,#16a34a,#22c55e); color:#fff; font-size:15px; border:2px solid #86efac; box-shadow:0 8px 24px rgba(34,197,94,.45); display:flex; align-items:center; gap:6px; max-width:calc(100vw - 28px); }
 .ol-fab:hover { background:linear-gradient(135deg,#15803d,#16a34a); }
-.ol-fab:disabled { background:#334155; border-color:#475569; color:#cbd5e1; box-shadow:none; }
+.ol-fab.spy { background:linear-gradient(135deg,#b45309,#ef4444); border-color:#fca5a5; box-shadow:0 8px 24px rgba(239,68,68,.45); }
+.ol-fab.spy:hover { background:linear-gradient(135deg,#92400e,#dc2626); }
+.ol-fab:disabled, .ol-fab.spy:disabled { background:#334155; border-color:#475569; color:#cbd5e1; box-shadow:none; }
 #olDiscuss.ol-has-fab { padding-bottom:76px; }
 /* Peran opsional (bisa diaktifkan / dinonaktifkan host di lobby) */
 .ol-opt { display:flex; align-items:center; gap:10px; background:#334155; border-radius:10px; padding:10px 12px; margin:6px 0; text-align:left; }
@@ -799,7 +801,7 @@
         </div>
         <!-- MODE ONLINE (WebRTC) -->
         <button type="button" id="btnOnlineMode" onclick="window.WTSOnline && window.WTSOnline.open()" style="background:linear-gradient(90deg,#0ea5e9,#6366f1);margin-top:16px">🌐 MAIN ONLINE (BUAT / GABUNG ROOM)</button>
-        <div style="font-size:12px;opacity:.8;margin-top:6px">Tiap pemain memakai HP masing-masing • Spy &amp; Warga + peran opsional (Guardian) yang diatur host • minimal 3 pemain</div>
+        <div style="font-size:12px;opacity:.8;margin-top:6px">Tiap pemain memakai HP masing-masing • Spy &amp; Warga + peran opsional (Guardian, Gluttony) yang diatur host • minimal 3 pemain</div>
         <div id="panelLanjutGame" class="info hidden" style="margin-top:14px;background:#172554;border:1px solid #6366f1;text-align:left">
             <b>💾 PERMAINAN TERAKHIR TERDETEKSI</b>
             <div id="infoLanjutGame" style="font-size:13px;margin:8px 0;opacity:.9"></div>
@@ -1045,7 +1047,7 @@
         <!-- MENU: buat / gabung -->
         <div id="olMenu" class="ol-screen hidden">
             <h1>🌐 MAIN ONLINE</h1>
-            <div class="ol-sub">Satu room, tiap pemain di HP masing-masing. Peran: Spy &amp; Warga, plus peran opsional (mis. Guardian) yang bisa diaktifkan host di lobby. Minimal 3 pemain.</div>
+            <div class="ol-sub">Satu room, tiap pemain di HP masing-masing. Peran: Spy &amp; Warga, plus peran opsional (Guardian, Gluttony) yang bisa diaktifkan host di lobby. Minimal 3 pemain.</div>
             <input type="text" id="olName" maxlength="16" placeholder="Nama kamu" autocomplete="off">
             <button type="button" class="ol-btn-green" data-ol="create" id="olBtnCreate">➕ BUAT ROOM BARU</button>
             <div class="ol-divider">atau gabung ke room teman</div>
@@ -1157,15 +1159,15 @@
             <button type="button" class="ol-btn-sec" data-ol="peek-close">🙈 SEMBUNYIKAN</button>
         </div>
     </div>
-    <!-- Skill Guardian (hanya untuk pemain ber-peran Guardian, hanya saat diskusi) -->
-    <button type="button" id="olGuardFab" class="ol-fab hidden" data-ol="guard-open">🛡️ Skill Guardian</button>
-    <div id="olGuard" class="ol-overlay hidden">
+    <!-- Skill peran khusus (Guardian / Gluttony) — tombol pojok kanan bawah, hanya saat diskusi -->
+    <button type="button" id="olSkillFab" class="ol-fab hidden" data-ol="skill-open">🛡️ Skill</button>
+    <div id="olSkill" class="ol-overlay hidden">
         <div class="ol-modal">
-            <h2>🛡️ Skill Guardian</h2>
-            <div class="info" style="text-align:center;font-size:13px">Pilih 1 pemain yang dilindungi dari <b>eliminasi voting</b> ronde ini.<br>⚠️ Hanya bisa dipakai <b>1× seumur permainan</b>.</div>
-            <div id="olGuardList" style="text-align:left;margin-top:6px"></div>
-            <button type="button" class="ol-btn-green" id="olGuardConfirm" data-ol="guard-confirm" disabled>Pilih satu pemain dulu</button>
-            <button type="button" class="ol-btn-sec" data-ol="guard-close">Batal</button>
+            <h2 id="olSkillTitle">Skill</h2>
+            <div class="info" id="olSkillInfo" style="text-align:center;font-size:13px"></div>
+            <div id="olSkillList" style="text-align:left;margin-top:6px"></div>
+            <button type="button" class="ol-btn-green" id="olSkillConfirm" data-ol="skill-confirm" disabled>Pilih satu pemain dulu</button>
+            <button type="button" class="ol-btn-sec" data-ol="skill-close">Batal</button>
         </div>
     </div>
     <div id="olToast" class="ol-toast hidden"></div>
@@ -9188,8 +9190,18 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     // Peran TIDAK WAJIB: host bisa mengaktifkan / menonaktifkan di lobby. Tambah peran baru cukup dengan menambah item di sini.
     var OPT_ROLES = [
         { key: 'guardian', icon: '🛡️', name: 'Guardian', def: true,
-          desc: 'Tim Warga • 1 pemain. Saat diskusi bisa melindungi 1 pemain dari eliminasi voting (1× seumur permainan).' }
+          desc: 'Tim Warga • 1 pemain. Saat diskusi bisa melindungi 1 pemain dari eliminasi voting (1× seumur permainan).' },
+        { key: 'gluttony', icon: '🍖', name: 'Gluttony', def: true,
+          desc: 'Tim Spy • menggantikan 1 Spy biasa (jumlah Spy tidak bertambah). Saat diskusi bisa memakan 1 pemain (2× seumur permainan, 1× per ronde): target tidak bisa skill, tidak bisa vote, dan hilang dari pilihan voting ronde itu.' }
     ];
+    var SKILL_MAX = { guardian: 1, gluttony: 2 };     // batas pemakaian skill per game
+    // Tampilan skill di client (tombol pojok kanan bawah + popup pilih target)
+    var SKILLS = {
+        guardian: { icon: '🛡️', name: 'Skill Guardian', doing: 'Melindungi ', confirm: '🛡️ LINDUNGI PEMAIN INI', mark: '🛡️ ',
+            info: 'Pilih 1 pemain yang dilindungi dari <b>eliminasi voting</b> ronde ini.<br>⚠️ Hanya bisa dipakai <b>1× seumur permainan</b>.' },
+        gluttony: { icon: '🍖', name: 'Skill Gluttony', doing: 'Memakan ', confirm: '🍖 MAKAN PEMAIN INI', mark: '🍖 ',
+            info: 'Pilih 1 pemain untuk <b>dimakan</b> ronde ini: target <b>tidak bisa skill</b>, <b>tidak bisa vote</b>, dan <b>hilang dari pilihan voting</b>.<br>⚠️ Bisa dipakai <b>2×</b> seumur permainan, maksimal 1× per ronde.' }
+    };
     function optDefaults() { var o = {}; OPT_ROLES.forEach(function (r) { o[r.key] = r.def; }); return o; }
     function optKnown(k) { return OPT_ROLES.some(function (r) { return r.key === k; }); }
     var FALLBACK_PAIRS = [
@@ -9249,7 +9261,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     var localEnd = 0;           // waktu (lokal) berakhirnya timer fase saat ini
     var roleRevealed = false;
     var selectedTarget = null;
-    var guardTarget = null;     // pilihan sementara di popup skill Guardian
+    var skillTarget = null;     // pilihan sementara di popup skill (Guardian / Gluttony)
     var chatSeen = {};
     var wake = null, wakePending = false;
     var toastTimer = null;
@@ -9605,32 +9617,40 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function stateFor(p) {
         var ph = H.phase;
         var need = H.players.filter(function (q) { return q.alive && q.connected; });
+        var needV = need.filter(function (q) { return !q.eaten; });     // yang masih boleh vote (tidak dimakan)
         var st = {
             t: 'state', code: roomCode, phase: ph, round: H.round, you: p.id,
             settings: { discussSec: H.discussSec, voteSec: H.voteSec, roles: H.optRoles },
             players: H.players.map(function (q) {
                 return {
                     id: q.id, name: q.name, host: q.isHost, alive: q.alive,
-                    connected: q.connected, left: q.left, ready: q.ready, voted: q.vote != null
+                    connected: q.connected, left: q.left, ready: q.ready, voted: q.vote != null,
+                    eaten: ph === 'voting' && !!q.eaten     // hilang dari pilihan voting (penyebab tidak ditampilkan)
                 };
             }),
             remaining: H.endsAt ? Math.max(0, H.endsAt - Date.now()) : 0,
             ready: { n: need.filter(function (q) { return q.ready; }).length, of: need.length },
-            voted: { n: need.filter(function (q) { return q.vote != null; }).length, of: need.length },
+            voted: { n: needV.filter(function (q) { return q.vote != null; }).length, of: needV.length },
             myVote: p.vote,
             minPlayers: MIN_PLAYERS
         };
-        if (ph !== 'lobby') st.me = { role: p.role, word: p.word, guardian: !!p.guardian };
-        // Info skill hanya dikirim ke pemain Guardian itu sendiri
-        if (p.guardian && ph !== 'lobby' && ph !== 'end') {
-            st.skill = { used: !!p.guardUsed, target: (p.guardUsed && H.guard) ? H.guard.target : null };
+        if (ph !== 'lobby') st.me = { role: p.role, word: p.word, guardian: !!p.guardian, gluttony: !!p.gluttony, eaten: !!p.eaten };
+        // Info skill hanya dikirim ke pemain pemilik skill itu sendiri
+        if (ph !== 'lobby' && ph !== 'end') {
+            if (p.guardian) {
+                var gUsed = !!(p.guardUsed && H.guard);
+                st.skill = { key: 'guardian', left: p.guardUsed ? 0 : SKILL_MAX.guardian, usedNow: gUsed, target: gUsed ? H.guard.target : null };
+            } else if (p.gluttony) {
+                var eUsed = p.gluttonyRound === H.round;
+                st.skill = { key: 'gluttony', left: SKILL_MAX.gluttony - (p.gluttonyUses || 0), usedNow: eUsed, target: eUsed ? p.gluttonyTarget : null };
+            }
         }
         if (ph === 'result') st.result = H.result;
         if (ph === 'end') {
             st.winner = H.winner;
             st.pair = H.pair;
             st.reveal = H.players.map(function (q) {
-                return { id: q.id, name: q.name, role: q.role, guardian: !!q.guardian, word: q.word, alive: q.alive, left: q.left };
+                return { id: q.id, name: q.name, role: q.role, guardian: !!q.guardian, gluttony: !!q.gluttony, word: q.word, alive: q.alive, left: q.left };
             });
         }
         return st;
@@ -9660,19 +9680,28 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 break;
             case 'chat': handleChat(p, m); break;
             case 'vote':
-                if (H.phase !== 'voting' || !p.alive || p.vote) break;
+                if (H.phase !== 'voting' || !p.alive || p.eaten || p.vote) break;      // yang dimakan Gluttony tidak bisa vote
                 var t = byId(m.target);
-                if (!t || !t.alive || t.id === p.id) break;
+                if (!t || !t.alive || t.eaten || t.id === p.id) break;                 // dan tidak bisa dipilih
                 p.vote = t.id;
                 if (!checkAllVoted()) broadcastState();
                 break;
-            case 'guard':
-                // Skill Guardian: hanya saat diskusi, hanya 1× seumur permainan, target = pemain hidup lain
-                if (H.phase !== 'discussion' || !p.alive || !p.guardian || p.guardUsed) break;
-                var gt = byId(m.target);
-                if (!gt || !gt.alive || gt.id === p.id) break;
-                p.guardUsed = true;
-                H.guard = { target: gt.id, round: H.round };
+            case 'skill':
+                // Skill peran khusus: hanya saat diskusi, hanya pemain hidup yang tidak dimakan, target = pemain hidup lain
+                if (H.phase !== 'discussion' || !p.alive || p.eaten) break;
+                var tg = byId(m.target);
+                if (!tg || !tg.alive || tg.id === p.id) break;
+                if (p.guardian) {
+                    if (p.guardUsed) break;                                   // Guardian: 1× seumur permainan
+                    p.guardUsed = true;
+                    H.guard = { target: tg.id, round: H.round };
+                } else if (p.gluttony) {
+                    if ((p.gluttonyUses || 0) >= SKILL_MAX.gluttony || p.gluttonyRound === H.round) break;   // 2× total, 1× per ronde
+                    p.gluttonyUses = (p.gluttonyUses || 0) + 1;
+                    p.gluttonyRound = H.round;
+                    p.gluttonyTarget = tg.id;
+                    tg.eaten = true;
+                } else break;
                 broadcastState();
                 break;
             case 'bye': removePlayer(p); break;
@@ -9731,15 +9760,21 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             var sp = H.players[order[i]];
             sp.role = 'spy'; sp.word = H.pair.spy;
         }
-        H.players.forEach(function (p) { p.alive = true; p.ready = false; p.vote = null; p.left = false; p.guardian = false; p.guardUsed = false; });
+        H.players.forEach(function (p) {
+            p.alive = true; p.ready = false; p.vote = null; p.left = false;
+            p.guardian = false; p.guardUsed = false;
+            p.gluttony = false; p.gluttonyUses = 0; p.gluttonyRound = 0; p.gluttonyTarget = null; p.eaten = false;
+        });
         // Guardian (peran opsional): jika diaktifkan host, 1 Guardian dipilih acak dari Tim Warga
         // (order sudah diacak; indeks setelah para Spy = Warga)
         if (H.optRoles.guardian) H.players[order[spyN]].guardian = true;
+        // Gluttony (peran opsional): MENGGANTIKAN 1 Spy biasa (order[0] adalah salah satu Spy) — jumlah Spy tidak bertambah
+        if (H.optRoles.gluttony) H.players[order[0]].gluttony = true;
         H.guard = null;
         H.round = 1; H.result = null; H.winner = null;
         clearTimer();
         clearChatAll();
-        addSystem('🎮 Permainan dimulai! ' + n + ' pemain • ' + spyN + ' Spy' + (H.optRoles.guardian ? ' • 1 Guardian 🛡️ (Tim Warga)' : '') + '.');
+        addSystem('🎮 Permainan dimulai! ' + n + ' pemain • ' + spyN + ' Spy' + (H.optRoles.gluttony ? ' (1 di antaranya Gluttony 🍖)' : '') + (H.optRoles.guardian ? ' • 1 Guardian 🛡️ (Tim Warga)' : '') + '.');
         H.phase = 'role';
         broadcastState();
     }
@@ -9755,7 +9790,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         clearTimer();
         H.phase = 'discussion';
         H.guard = null;
-        H.players.forEach(function (p) { p.vote = null; });
+        H.players.forEach(function (p) { p.vote = null; p.eaten = false; });     // efek Gluttony hanya berlaku 1 ronde
         addSystem('🗣️ Ronde ' + H.round + ' — diskusi dimulai. Jelaskan katamu tanpa menyebutnya!');
         setTimer(H.discussSec, startVoting);
         broadcastState();
@@ -9773,7 +9808,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
 
     function checkAllVoted() {
         if (H.phase !== 'voting') return false;
-        var need = H.players.filter(function (p) { return p.alive && p.connected; });
+        var need = H.players.filter(function (p) { return p.alive && p.connected && !p.eaten; });
         if (need.length && need.every(function (p) { return p.vote != null; })) { resolveVotes(); return true; }
         return false;
     }
@@ -9885,6 +9920,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         H.players.forEach(function (p) {
             p.alive = true; p.ready = false; p.vote = null; p.role = null; p.word = null; p.left = false;
             p.guardian = false; p.guardUsed = false;
+            p.gluttony = false; p.gluttonyUses = 0; p.gluttonyRound = 0; p.gluttonyTarget = null; p.eaten = false;
         });
         H.guard = null;
         H.phase = 'lobby'; H.round = 0; H.result = null; H.winner = null; H.pair = null;
@@ -10039,7 +10075,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         H = null; S = null; isHost = false; myId = null; roomCode = ''; localEnd = 0;
         roleRevealed = false; selectedTarget = null;
         clearChat(); closePeek(); clearNotice(); releaseWake();
-        closeGuard(); $('olGuardFab').classList.add('hidden'); $('olDiscuss').classList.remove('ol-has-fab');
+        closeSkill(); $('olSkillFab').classList.add('hidden'); $('olDiscuss').classList.remove('ol-has-fab');
         $('olConnType').textContent = '';
     }
 
@@ -10061,18 +10097,25 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function findMe(st) { return st.players.filter(function (p) { return p.id === st.you; })[0]; }
     function roleLabel(r) { return r === 'spy' ? '🕵️ SPY' : '🧑 WARGA'; }
 
+    function specialLabel(p) {          // label peran untuk layar hasil akhir
+        if (p.role === 'spy') return p.gluttony ? '🍖 GLUTTONY' : roleLabel('spy');
+        return p.guardian ? '🛡️ GUARDIAN' : roleLabel(p.role);
+    }
     function identityHtml(st) {
         if (!st.me || !st.me.role) return '';
-        var spy = st.me.role === 'spy', gd = !spy && !!st.me.guardian;
-        return '<div class="role ' + (spy ? 'spy' : (gd ? 'guardian' : 'warga')) + '">' + (gd ? '🛡️ GUARDIAN' : roleLabel(st.me.role)) + '</div>' +
+        var spy = st.me.role === 'spy', gd = !spy && !!st.me.guardian, gl = spy && !!st.me.gluttony;
+        var info;
+        if (spy) {
+            info = '😈 Kamu <b>SPY</b>' + (gl ? ' (jenis <b>Gluttony</b>)' : '') + '. Katamu <b>berbeda</b> dari warga. Dengarkan penjelasan mereka dan samarkan dirimu!' +
+                (gl ? '<br>🍖 Saat <b>sesi diskusi</b>, tekan tombol <b>🍖 Skill Gluttony</b> di pojok kanan bawah untuk memakan 1 pemain: dia tidak bisa skill, tidak bisa vote, dan hilang dari pilihan voting ronde itu. Bisa <b>2×</b> seumur permainan, maksimal 1× per ronde.' : '');
+        } else if (gd) {
+            info = '🛡️ Kamu <b>GUARDIAN</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy! Saat <b>sesi diskusi</b>, tekan tombol <b>🛡️ Skill Guardian</b> di pojok kanan bawah untuk melindungi 1 pemain dari eliminasi voting ronde itu. ⚠️ Hanya <b>1×</b> seumur permainan.';
+        } else {
+            info = '🧑 Kamu <b>WARGA</b>. Temukan pemain yang katanya berbeda darimu — dialah Spy!';
+        }
+        return '<div class="role ' + (spy ? 'spy' : (gd ? 'guardian' : 'warga')) + '">' + (gl ? '🍖 GLUTTONY (SPY)' : (gd ? '🛡️ GUARDIAN' : roleLabel(st.me.role))) + '</div>' +
             '<div class="kata">' + esc(st.me.word) + '</div>' +
-            '<div class="info" style="text-align:center">' +
-            (spy
-                ? '😈 Kamu <b>SPY</b>. Katamu <b>berbeda</b> dari warga. Dengarkan penjelasan mereka dan samarkan dirimu!'
-                : (gd
-                    ? '🛡️ Kamu <b>GUARDIAN</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy! Saat <b>sesi diskusi</b>, tekan tombol <b>🛡️ Skill Guardian</b> di pojok kanan bawah untuk melindungi 1 pemain dari eliminasi voting ronde itu. ⚠️ Hanya <b>1×</b> seumur permainan.'
-                    : '🧑 Kamu <b>WARGA</b>. Temukan pemain yang katanya berbeda darimu — dialah Spy!')) +
-            '</div>';
+            '<div class="info" style="text-align:center">' + info + '</div>';
     }
 
     function applyState(st) {
@@ -10101,7 +10144,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             case 'end': showScreen('olEnd'); renderEnd(st); break;
         }
         if (!$('olPeek').classList.contains('hidden')) $('olPeekBody').innerHTML = identityHtml(st);
-        updateGuardUi(st);
+        updateSkillUi(st);
         updateTimers();
     }
 
@@ -10182,11 +10225,15 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     }
 
     function renderVote(st) {
-        var me = findMe(st), host = !!(me && me.host), alive = !!(me && me.alive);
+        var me = findMe(st), host = !!(me && me.host), alive = !!(me && me.alive), eatenMe = !!(st.me && st.me.eaten);
         $('olVoteTitle').textContent = '🗳️ Voting — Ronde ' + st.round;
         var html = '';
         if (!alive) {
             html = '<div class="info" style="text-align:center">💀 Kamu sudah tereliminasi. Kamu menonton voting ronde ini.</div>' +
+                '<div class="ol-sub">Sudah memilih: <b>' + st.voted.n + '/' + st.voted.of + '</b></div>';
+        } else if (eatenMe) {
+            // Dimakan Gluttony: penyebab sengaja tidak ditampilkan
+            html = '<div class="info" style="text-align:center;background:#7f1d1d;border:1px solid #ef4444">❌ Kamu tidak dapat memberi suara ronde ini.</div>' +
                 '<div class="ol-sub">Sudah memilih: <b>' + st.voted.n + '/' + st.voted.of + '</b></div>';
         } else if (st.myVote) {
             var t = st.players.filter(function (p) { return p.id === st.myVote; })[0];
@@ -10194,7 +10241,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 esc(t ? t.name : '?') + '</b> sudah terkirim.</div>' +
                 '<div class="ol-sub">Menunggu pemain lain: <b>' + st.voted.n + '/' + st.voted.of + '</b> sudah memilih</div>';
         } else {
-            html = st.players.filter(function (p) { return p.alive && p.id !== st.you; }).map(function (p) {
+            html = st.players.filter(function (p) { return p.alive && !p.eaten && p.id !== st.you; }).map(function (p) {
                 return '<button type="button" class="ol-vote-btn' + (selectedTarget === p.id ? ' sel' : '') +
                     '" data-ol="pick" data-id="' + esc(p.id) + '">' + (selectedTarget === p.id ? '🎯 ' : '👤 ') + esc(p.name) + '</button>';
             }).join('');
@@ -10251,54 +10298,59 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             var status = p.left ? '🚪 keluar' : (p.alive ? '✅ selamat' : '💀 tereliminasi');
             return '<div class="ol-reveal-row"><span class="n"><b>' + esc(p.name) + '</b>' + (p.id === st.you ? ' <small>(kamu)</small>' : '') +
                 '<br><small>' + status + '</small></span><span class="' + (p.role === 'spy' ? 'spy' : (p.guardian ? 'guardian' : 'warga')) + '" style="font-weight:800">' +
-                (p.guardian ? '🛡️ GUARDIAN' : roleLabel(p.role)) + '</span><span class="w">' + esc(p.word) + '</span></div>';
+                specialLabel(p) + '</span><span class="w">' + esc(p.word) + '</span></div>';
         }).join('');
         $('olEndBody').innerHTML = html;
         $('olBtnAgain').classList.toggle('hidden', !host);
         $('olWaitAgain').classList.toggle('hidden', host);
     }
 
-    /* ---------- Skill Guardian (tombol pojok kanan bawah, hanya saat diskusi) ---------- */
-    function renderGuard() {
-        if (!S) return;
+    /* ---------- Skill peran khusus (tombol pojok kanan bawah, hanya saat diskusi) ---------- */
+    function renderSkill() {
+        if (!S || !S.skill || !SKILLS[S.skill.key]) return;
+        var cfg = SKILLS[S.skill.key];
         var list = S.players.filter(function (p) { return p.alive && p.id !== S.you; });
-        if (guardTarget && !list.some(function (p) { return p.id === guardTarget; })) guardTarget = null;
-        $('olGuardList').innerHTML = list.map(function (p) {
-            var on = guardTarget === p.id;
-            return '<button type="button" class="ol-vote-btn' + (on ? ' sel' : '') + '" data-ol="guard-pick" data-id="' + esc(p.id) + '">' +
-                (on ? '🛡️ ' : '👤 ') + esc(p.name) + '</button>';
+        if (skillTarget && !list.some(function (p) { return p.id === skillTarget; })) skillTarget = null;
+        $('olSkillTitle').textContent = cfg.icon + ' ' + cfg.name;
+        $('olSkillInfo').innerHTML = cfg.info;
+        $('olSkillList').innerHTML = list.map(function (p) {
+            var on = skillTarget === p.id;
+            return '<button type="button" class="ol-vote-btn' + (on ? ' sel' : '') + '" data-ol="skill-pick" data-id="' + esc(p.id) + '">' +
+                (on ? cfg.mark : '👤 ') + esc(p.name) + '</button>';
         }).join('');
-        var b = $('olGuardConfirm');
-        b.disabled = !guardTarget;
-        b.textContent = guardTarget ? '🛡️ LINDUNGI PEMAIN INI' : 'Pilih satu pemain dulu';
+        var b = $('olSkillConfirm');
+        b.disabled = !skillTarget;
+        b.textContent = skillTarget ? cfg.confirm : 'Pilih satu pemain dulu';
     }
-    function openGuard() {
-        if (!S || !S.skill || S.skill.used || S.phase !== 'discussion') return;
+    function openSkill() {
+        if (!S || !S.skill || S.skill.usedNow || S.skill.left <= 0 || S.phase !== 'discussion') return;
         var me = findMe(S);
-        if (!me || !me.alive) return;
-        guardTarget = null;
-        renderGuard();
-        $('olGuard').classList.remove('hidden');
+        if (!me || !me.alive || (S.me && S.me.eaten)) return;
+        skillTarget = null;
+        renderSkill();
+        $('olSkill').classList.remove('hidden');
     }
-    function closeGuard() { guardTarget = null; $('olGuard').classList.add('hidden'); }
-    function updateGuardUi(st) {
-        var me = findMe(st), sk = st.skill;
-        // Muncul hanya saat diskusi, untuk Guardian yang masih hidup. Setelah dipakai: tetap tampil (nonaktif)
-        // sampai diskusi ronde itu selesai, lalu hilang.
-        var show = !!(sk && me && me.alive && st.phase === 'discussion' && (!sk.used || sk.target));
-        var fab = $('olGuardFab');
+    function closeSkill() { skillTarget = null; $('olSkill').classList.add('hidden'); }
+    function updateSkillUi(st) {
+        var me = findMe(st), sk = st.skill, cfg = sk && SKILLS[sk.key];
+        var eaten = !!(st.me && st.me.eaten);
+        // Muncul hanya saat diskusi, untuk pemilik skill yang hidup dan TIDAK dimakan Gluttony, selama skill masih ada.
+        // Setelah dipakai: tetap tampil (nonaktif) sampai diskusi ronde itu selesai, lalu hilang / kembali jika masih ada sisa.
+        var show = !!(cfg && me && me.alive && !eaten && st.phase === 'discussion' && (sk.usedNow || sk.left > 0));
+        var fab = $('olSkillFab');
         fab.classList.toggle('hidden', !show);
+        fab.classList.toggle('spy', !!(show && sk.key === 'gluttony'));
         $('olDiscuss').classList.toggle('ol-has-fab', show);
-        if (!show || sk.used) { closeGuard(); }
+        if (!show || sk.usedNow) closeSkill();
         if (!show) return;
-        if (sk.used) {
+        if (sk.usedNow) {
             var t = st.players.filter(function (p) { return p.id === sk.target; })[0];
             fab.disabled = true;
-            fab.textContent = '🛡️ Melindungi ' + (t ? t.name : '?');
+            fab.textContent = cfg.icon + ' ' + cfg.doing + (t ? t.name : '?');
         } else {
             fab.disabled = false;
-            fab.textContent = '🛡️ Skill Guardian';
-            if (!$('olGuard').classList.contains('hidden')) renderGuard();
+            fab.textContent = cfg.icon + ' ' + cfg.name + (SKILL_MAX[sk.key] > 1 ? ' (' + sk.left + '×)' : '');
+            if (!$('olSkill').classList.contains('hidden')) renderSkill();
         }
     }
 
@@ -10387,11 +10439,11 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             case 'opt-role':
                 act({ t: 'settings', role: el.getAttribute('data-key'), on: el.getAttribute('data-on') !== '1' });
                 break;
-            case 'guard-open': openGuard(); break;
-            case 'guard-close': closeGuard(); break;
-            case 'guard-pick': guardTarget = el.getAttribute('data-id'); renderGuard(); break;
-            case 'guard-confirm':
-                if (guardTarget) { var gtg = guardTarget; closeGuard(); act({ t: 'guard', target: gtg }); }
+            case 'skill-open': openSkill(); break;
+            case 'skill-close': closeSkill(); break;
+            case 'skill-pick': skillTarget = el.getAttribute('data-id'); renderSkill(); break;
+            case 'skill-confirm':
+                if (skillTarget) { var stg = skillTarget; closeSkill(); act({ t: 'skill', target: stg }); }
                 break;
             case 'again': act({ t: 'lobby' }); break;
             case 'reconnect': reconnectNow(); break;
@@ -10401,9 +10453,9 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     $('olPeek').addEventListener('click', function (e) {
         if (e.target === this) closePeek(); else onClick(e);
     });
-    $('olGuardFab').addEventListener('click', onClick);
-    $('olGuard').addEventListener('click', function (e) {
-        if (e.target === this) closeGuard(); else onClick(e);
+    $('olSkillFab').addEventListener('click', onClick);
+    $('olSkill').addEventListener('click', function (e) {
+        if (e.target === this) closeSkill(); else onClick(e);
     });
     $('olChatInput').addEventListener('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
