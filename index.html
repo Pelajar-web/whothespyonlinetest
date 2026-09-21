@@ -79,6 +79,7 @@
         .guardian { color: #4ade80; --rc: 74,222,128; }
         .hero { color: #38bdf8; --rc: 56,189,248; }
         .antihero { color: #f43f5e; --rc: 244,63,94; }
+        .pembungkam { color: #94a3b8; --rc: 148,163,184; }
         .special { color: #f472b6; --rc: 244,114,182; }
         .gold { color: #fbbf24; --rc: 251,191,36; }
         .info {
@@ -741,7 +742,9 @@
 .ol-fab:hover { background:linear-gradient(135deg,#15803d,#16a34a); }
 .ol-fab.spy { background:linear-gradient(135deg,#b45309,#ef4444); border-color:#fca5a5; box-shadow:0 8px 24px rgba(239,68,68,.45); }
 .ol-fab.spy:hover { background:linear-gradient(135deg,#92400e,#dc2626); }
-.ol-fab:disabled, .ol-fab.spy:disabled { background:#334155; border-color:#475569; color:#cbd5e1; box-shadow:none; }
+.ol-fab.polisi { background:linear-gradient(135deg,#1d4ed8,#60a5fa); border-color:#bfdbfe; box-shadow:0 8px 24px rgba(96,165,250,.45); }
+.ol-fab.polisi:hover { background:linear-gradient(135deg,#1e40af,#3b82f6); }
+.ol-fab:disabled, .ol-fab.spy:disabled, .ol-fab.polisi:disabled { background:#334155; border-color:#475569; color:#cbd5e1; box-shadow:none; }
 #olDiscuss.ol-has-fab { padding-bottom:76px; }
 /* Peran opsional (bisa diaktifkan / dinonaktifkan host di lobby) */
 .ol-opt { display:flex; align-items:center; gap:10px; background:#334155; border-radius:10px; padding:10px 12px; margin:6px 0; text-align:left; }
@@ -752,6 +755,13 @@
 .ol-switch.on:hover { background:#15803d; }
 .ol-opt-tag { font-size:12px; font-weight:800; padding:5px 12px; border-radius:999px; background:#0f172a; color:#94a3b8; white-space:nowrap; }
 .ol-opt-tag.on { color:#4ade80; }
+.ol-fraksi { border-radius:14px; padding:8px 10px 6px; margin:10px 0; border:1px solid #475569; }
+.ol-fraksi.warga { background:rgba(34,197,94,.07); border-color:#16a34a; }
+.ol-fraksi.spy { background:rgba(239,68,68,.07); border-color:#dc2626; }
+.ol-fraksi-h { font-weight:800; font-size:15px; text-align:left; margin:2px 0 8px; }
+.ol-fraksi-h small { opacity:.7; font-weight:600; }
+.ol-fraksi-btns { display:flex; gap:8px; margin-bottom:6px; }
+.ol-fraksi-btns button { flex:1; width:auto; margin:0; padding:9px 8px; font-size:12.5px; line-height:1.25; }
 </style>
 </head>
 <body>
@@ -877,6 +887,7 @@
             <div class="role-item"><input type="checkbox" id="role_SpySkill_gluttony"><button type="button" class="role-info-btn" title="Info peran" onclick="window.tampilkanRoleInfo(this); event.stopPropagation();">?</button><label for="role_SpySkill_gluttony"><b>🍖 Gluttony</b> <span class="tag tag-spy">Spy</span><br>Makan 1 pemain (2x): target tidak bisa skill (termasuk skill sesi voting), tidak bisa vote, dan hilang dari pilihan voting ronde ini.</label></div>
             <div class="role-item"><input type="checkbox" id="role_SpySkill_pengacau"><button type="button" class="role-info-btn" title="Info peran" onclick="window.tampilkanRoleInfo(this); event.stopPropagation();">?</button><label for="role_SpySkill_pengacau"><b>🌀 Pengacau</b> <span class="tag tag-spy">Spy</span><br>Vote target tidak dihitung ronde ini. Maksimal 2×, bisa simpan skill.</label></div>
             <div class="role-item"><input type="checkbox" id="role_SpySkill_fitnah"><button type="button" class="role-info-btn" title="Info peran" onclick="window.tampilkanRoleInfo(this); event.stopPropagation();">?</button><label for="role_SpySkill_fitnah"><b>📢 Fitnah</b> <span class="tag tag-spy">Spy</span><br>Target mendapat +1 vote otomatis. Maksimal 2×, bisa simpan skill.</label></div>
+            <div class="role-item"><input type="checkbox" id="role_SpySkill_pembungkam"><button type="button" class="role-info-btn" title="Info peran" onclick="window.tampilkanRoleInfo(this); event.stopPropagation();">?</button><label for="role_SpySkill_pembungkam"><b>🤐 Pembungkam</b> <span class="tag tag-spy">Spy</span><br>Pilih target: target tidak bisa vote ronde ini. Maksimal 2×, bisa simpan skill.</label></div>
             <div class="role-item"><input type="checkbox" id="role_SpySkill_sabotase"><button type="button" class="role-info-btn" title="Info peran" onclick="window.tampilkanRoleInfo(this); event.stopPropagation();">?</button><label for="role_SpySkill_sabotase"><b>💣 Sabotase</b> <span class="tag tag-spy">Spy</span><br>⏱ Sabotase Waktu (1×) — timer di voting; jika habis sebelum Spy gugur → Spy menang. 🛡 Sabotase Perlindungan (1×) — menggagalkan skill perlindungan Warga: Perisai, Guardian, Reverse, Hero. Bisa simpan skill.</label></div>
             <div class="role-item" id="roleItemPemburuSpy"><input type="checkbox" id="role_SpySkill_joker"><button type="button" class="role-info-btn" title="Info peran" onclick="window.tampilkanRoleInfo(this); event.stopPropagation();">?</button><label for="role_SpySkill_joker"><b>🎯 Hunter Spy (Pemburu Spy)</b> <span class="tag tag-spy">Spy</span><br>Tebak apakah target Warga atau Netral. Benar = target tereliminasi. Salah = kamu tereliminasi. Skill boleh disimpan.</label></div>
             <div class="spy-subtitle">😈 Peran Spy Khusus</div>
@@ -1674,6 +1685,7 @@ var skillSpy = [
     {id:"gluttony", nama:"🍖 Gluttony", fungsi:"Makan 1 pemain (maks 2x). Target ronde ini: tidak bisa skill (termasuk skill sesi voting), tidak bisa vote, dan hilang dari daftar pilihan voting.", cara:"Pilih 1 pemain"},
     {id:"pengacau", nama:"🌀 Pengacau", fungsi:"Vote target tidak dihitung ronde ini. Maksimal 2× seumur permainan. Bisa simpan skill.", cara:"Pilih 1 pemain atau simpan"},
     {id:"fitnah", nama:"📢 Fitnah", fungsi:"Target mendapat +1 vote otomatis ronde ini. Maksimal 2× seumur permainan. Bisa simpan skill.", cara:"Pilih 1 pemain atau simpan"},
+    {id:"pembungkam", nama:"🤐 Pembungkam", fungsi:"Pilih target: target tidak bisa vote ronde ini. Maksimal 2× seumur permainan. Bisa simpan skill.", cara:"Pilih 1 pemain atau simpan"},
     {id:"sabotase", nama:"💣 Sabotase", fungsi:"⏱ Sabotase Waktu (1×) — timer di voting; jika habis sebelum Spy gugur → Spy menang (syarat ronde berlaku). 🛡 Sabotase Perlindungan (1×) — menggagalkan perlindungan Warga: Perisai, Guardian, Reverse, Hero. Bisa simpan skill.", cara:"Gunakan / simpan"},
     {id:"joker", nama:"🎯 Pemburu Spy", fungsi:"Tebak apakah target Warga atau Netral. Benar = target tereliminasi. Salah = kamu (Pemburu Spy) tereliminasi. Skill boleh disimpan dulu.", cara:"Pilih 1 pemain → Warga/Netral"}
 ];
@@ -1868,6 +1880,8 @@ function serialisasiPemain(list) {
             conjurerUsed: !!p.conjurerUsed,
             pengacauUses: p.pengacauUses || 0,
             fitnahUses: p.fitnahUses || 0,
+            pembungkamUses: p.pembungkamUses || 0,
+            dibungkam: !!p.dibungkam,
             hackerUses: p.hackerUses || 0,
             diracunConjurer: !!p.diracunConjurer,
             timeTravelUsed: !!p.timeTravelUsed,
@@ -2202,6 +2216,7 @@ var deskripsiPeranLengkap = {
     "Gluttony": "🍖 Tim Spy. Memakan 1 pemain (bisa 2 kali). Target yang dimakan di ronde itu tidak bisa memakai skill (termasuk skill sesi voting), tidak bisa vote, dan tidak muncul di pilihan voting.",
     "Pengacau": "🌀 Tim Spy. Pilih target agar vote-nya tidak dihitung ronde ini. Skill maksimal 2× seumur permainan dan bisa disimpan dulu.",
     "Fitnah": "📢 Tim Spy. Menjebak target dengan +1 vote otomatis. Skill maksimal 2× seumur permainan, bisa disimpan dulu.",
+    "Pembungkam": "🤐 Tim Spy. Pilih target agar target tidak bisa memberikan suara di sesi voting ronde ini. Skill maksimal 2× seumur permainan dan bisa disimpan dulu.",
     "Sabotase": "💣 Tim Spy. Memiliki dua opsi (masing-masing 1×): ⏱ Sabotase Waktu — timer di sesi voting; jika habis sebelum Spy gugur maka Spy menang (syarat ronde berlaku). 🛡 Sabotase Perlindungan — menggagalkan skill perlindungan Tim Warga (Perisai, Guardian, Reverse, Hero) pada ronde aktif. Bisa disimpan dulu.",
     "Bom Waktu": "🧨 Tim Spy. Menandai target. Jika pemilik Bom Waktu mati pada ronde berjalan, target yang ditandai ikut menjadi korban sesuai mekanik bom.",
     "Pemburu Spy": "🎯 Tim Spy. Pilih satu pemain, lalu tebak apakah dia Warga atau Netral. Benar = target tereliminasi. Salah = Pemburu Spy tereliminasi. Skill boleh disimpan dulu."
@@ -3351,6 +3366,7 @@ window.prosesMulai = function() {
         "Gluttony": document.getElementById("role_SpySkill_gluttony") ? document.getElementById("role_SpySkill_gluttony").checked : false,
         "Pengacau": (document.getElementById("role_SpySkill_pengacau") ? document.getElementById("role_SpySkill_pengacau").checked : false),
         "Fitnah": (document.getElementById("role_SpySkill_fitnah") ? document.getElementById("role_SpySkill_fitnah").checked : false),
+        "Pembungkam": (document.getElementById("role_SpySkill_pembungkam") ? document.getElementById("role_SpySkill_pembungkam").checked : false),
         "Sabotase": document.getElementById("role_SpySkill_sabotase") ? document.getElementById("role_SpySkill_sabotase").checked : false,
         "Pemburu Spy": (document.getElementById("role_SpySkill_joker") ? document.getElementById("role_SpySkill_joker").checked : false),
         Dokter: (document.getElementById("role_Dokter") ? document.getElementById("role_Dokter").checked : false),
@@ -3465,6 +3481,7 @@ window.prosesSimpanNama = function() {
             ditahan: false,
             ditahanRonde: 0,
             dimakan: false,
+            dibungkam: false,
             engineerSembunyiUses: 0,
             engineerSembunyiVote: false,
             necromancerUsed: false,
@@ -3506,6 +3523,7 @@ window.prosesSimpanNama = function() {
             conjurerUsed: false,
             pengacauUses: 0,
             fitnahUses: 0,
+            pembungkamUses: 0,
             hackerUses: 0,
             godfatherUsed: false,
             timeTravelUsed: false,
@@ -3591,7 +3609,7 @@ function buatRole() {
     // Spy Khusus menggantikan Spy Biasa, bukan menambah jumlah Spy.
     var jumlahSpy = (n >= 7) ? 2 : 1;
     window.jumlahSpySlot = jumlahSpy;
-    var kandidatSpyKhusus = ["God Father","Changer","Arsonist","Penyamaran","Arwah Spy","Dementor","Swapper Spy","Mayor Spy","Revenger Spy","Conjurer","Antihero","Perisai Spy","Reverse Spy","Penipu","Necromancer","Dalang","Hacker","Gluttony","Pengacau","Fitnah","Sabotase","Pemburu Spy"];
+    var kandidatSpyKhusus = ["God Father","Changer","Arsonist","Penyamaran","Arwah Spy","Dementor","Swapper Spy","Mayor Spy","Revenger Spy","Conjurer","Antihero","Perisai Spy","Reverse Spy","Penipu","Necromancer","Dalang","Hacker","Gluttony","Pengacau","Fitnah","Pembungkam","Sabotase","Pemburu Spy"];
     var spyDipilih = [];
     for (var si = 0; si < kandidatSpyKhusus.length; si++) {
         if (peranAktif[kandidatSpyKhusus[si]]) spyDipilih.push(kandidatSpyKhusus[si]);
@@ -3682,6 +3700,7 @@ function buatRole() {
         pemain[i].samaranWarga = false;
         pemain[i].tersembunyi = false;
         pemain[i].voteDibatalkan = false;
+        pemain[i].dibungkam = false;
         pemain[i].nezhaAktif = true;
         pemain[i].loverIdx = -1;
         pemain[i].dilindungiGuardian = false;
@@ -4698,6 +4717,24 @@ function tampilkanSkill() {
             htmlF += '<button type="button" class="target-btn" style="background:#64748b" onclick="window.simpanSkillFitnah()">💾 SIMPAN SKILL</button>';
             boxTarget.innerHTML = htmlF;
         }
+    } else if (p.role === "Pembungkam" || (p.skill && p.skill.id === "pembungkam")) {
+        var sisaBung = Math.max(0, 2 - (p.pembungkamUses || 0));
+        document.getElementById("skillIsi").innerHTML =
+            '<div class="skill">🤐 Pembungkam</div>' +
+            '<div class="info"><b>Fungsi:</b> Target tidak bisa vote ronde ini.<br>' +
+            'Sisa penggunaan: <b>' + sisaBung + '/2</b><br>' +
+            (sisaBung <= 0 ? '<span style="color:#ef4444">Skill sudah habis (2×).</span>' : 'Pilih target, atau simpan skill.') + '</div>';
+        if (sisaBung <= 0) {
+            boxTarget.innerHTML = '<div class="info">❌ Skill Pembungkam sudah dipakai 2×.</div><button type="button" class="target-btn" onclick="window.skipSpecialSkill()">LANJUT</button>';
+        } else {
+            var htmlB = '<div class="info">Pilih pemain yang dibungkam (tidak bisa vote), atau simpan skill:</div>';
+            for (var bi = 0; bi < pemain.length; bi++) {
+                if (!pemain[bi].hidup || bi === skillPlayerIdx()) continue;
+                htmlB += '<button type="button" class="target-btn" style="background:#64748b" onclick="window.pakaiPembungkam(' + bi + ')">🤐 Bungkam ' + pemain[bi].nama + '</button>';
+            }
+            htmlB += '<button type="button" class="target-btn" style="background:#475569" onclick="window.simpanSkillPembungkam()">💾 SIMPAN SKILL</button>';
+            boxTarget.innerHTML = htmlB;
+        }
     } else if (p.role === "Conjurer" || (p.skill && p.skill.id === "conjurer")) {
         document.getElementById("skillIsi").innerHTML =
             '<div class="skill">🪄 Conjurer</div>' +
@@ -5446,6 +5483,64 @@ window.simpanSkillFitnah = function() {
     }
 };
 
+window.pakaiPembungkam = function(targetIdx) {
+    try {
+        var p = pemain[skillPlayerIdx()];
+        if (!p || !(p.role === "Pembungkam" || (p.skill && p.skill.id === "pembungkam"))) return;
+        var sisa = Math.max(0, 2 - (p.pembungkamUses || 0));
+        if (sisa <= 0) {
+            document.getElementById("hasilSkill").innerHTML = "<b>HASIL SKILL:</b><br>❌ Skill Pembungkam sudah dipakai 2×.";
+            document.getElementById("hasilSkill").classList.remove("hidden");
+            document.getElementById("btnNextSkill").classList.remove("hidden");
+            document.getElementById("pilihanTarget").innerHTML = "";
+            return;
+        }
+        if (targetIdx < 0 || !pemain[targetIdx] || !pemain[targetIdx].hidup) return;
+        var revB = cobaReverseOfensif(skillPlayerIdx(), targetIdx);
+        var vB = revB.victimIdx;
+        var gB = cobaBlokirGuardian(vB, "Pembungkam");
+        if (gB.blocked) {
+            p.pembungkamUses = (p.pembungkamUses || 0) + 1;
+            p.skillUsed = true;
+            document.getElementById("hasilSkill").innerHTML = "<b>HASIL SKILL:</b><br>" + (revB.reversed ? revB.pesan + "<br>" : "") + gB.pesan + "<br>Sisa Pembungkam: <b>" + (2 - p.pembungkamUses) + "/2</b>";
+            document.getElementById("hasilSkill").classList.remove("hidden");
+            document.getElementById("btnNextSkill").classList.remove("hidden");
+            document.getElementById("pilihanTarget").innerHTML = "";
+            try { simpanPermainanTerakhir(); } catch (e) {}
+            return;
+        }
+        pemain[vB].dibungkam = true;
+        p.pembungkamUses = (p.pembungkamUses || 0) + 1;
+        p.skillUsed = true;
+        try { mainkanEfekSkill("vote", revB.reversed ? "↩️ REVERSE!" : "🤐 PEMBUNGKAM!"); } catch (e) {}
+        document.getElementById("hasilSkill").innerHTML = revB.reversed
+            ? ("<b>HASIL SKILL:</b><br>" + revB.pesan + "<br>🤐 Efek Pembungkam mengenai <b>" + pemain[vB].nama + "</b>. Sisa: <b>" + (2 - p.pembungkamUses) + "/2</b>")
+            : ("<b>HASIL SKILL:</b><br>🤐 <b>" + pemain[vB].nama + "</b> dibungkam! Tidak bisa vote ronde ini.<br>Sisa: <b>" + (2 - p.pembungkamUses) + "/2</b>");
+        document.getElementById("hasilSkill").classList.remove("hidden");
+        document.getElementById("btnNextSkill").classList.remove("hidden");
+        document.getElementById("pilihanTarget").innerHTML = "";
+        try { simpanPermainanTerakhir(); } catch (e) {}
+    } catch (err) {
+        try { console.error(err); } catch (e2) {}
+        var btn = document.getElementById("btnNextSkill");
+        if (btn) btn.classList.remove("hidden");
+    }
+};
+window.simpanSkillPembungkam = function() {
+    try {
+        var p = pemain[skillPlayerIdx()];
+        var sisa = p ? Math.max(0, 2 - (p.pembungkamUses || 0)) : 0;
+        document.getElementById("hasilSkill").innerHTML = "<b>HASIL SKILL:</b><br>💾 Skill Pembungkam disimpan (sisa " + sisa + "/2).";
+        document.getElementById("hasilSkill").classList.remove("hidden");
+        document.getElementById("btnNextSkill").classList.remove("hidden");
+        document.getElementById("pilihanTarget").innerHTML = "";
+        try { simpanPermainanTerakhir(); } catch (e) {}
+    } catch (err) {
+        var btn = document.getElementById("btnNextSkill");
+        if (btn) btn.classList.remove("hidden");
+    }
+};
+
 window.pakaiConjurer = function(targetIdx) {
     try {
         var p = pemain[skillPlayerIdx()];
@@ -5821,8 +5916,8 @@ function eksekusiSkill(targetIndex) {
 
     // Reverse: skill ofensif pertama yang mengenai Reverse berbalik ke penyerang
     if (targetIndex >= 0 && pengguna && pengguna.skill) {
-        var ofensifIds = ["hacker","pengacau","fitnah","bom_waktu","jebakan","pemburu_malam","gluttony","conjurer","penangkapan","arsonit","provokator","penanda","joker"];
-        if (ofensifIds.indexOf(pengguna.skill.id) >= 0 || pengguna.role === "Polisi" || pengguna.role === "Arsonist" || pengguna.role === "Gluttony" || pengguna.role === "Hacker" || pengguna.role === "Pengacau" || pengguna.role === "Fitnah" || pengguna.role === "Conjurer") {
+        var ofensifIds = ["hacker","pengacau","fitnah","pembungkam","bom_waktu","jebakan","pemburu_malam","gluttony","conjurer","penangkapan","arsonit","provokator","penanda","joker"];
+        if (ofensifIds.indexOf(pengguna.skill.id) >= 0 || pengguna.role === "Polisi" || pengguna.role === "Arsonist" || pengguna.role === "Gluttony" || pengguna.role === "Hacker" || pengguna.role === "Pengacau" || pengguna.role === "Fitnah" || pengguna.role === "Pembungkam" || pengguna.role === "Conjurer") {
             reverseInfo = cobaReverseOfensif(attackerIdx, targetIndex);
             if (reverseInfo.reversed) {
                 targetIndex = reverseInfo.victimIdx;
@@ -6029,6 +6124,15 @@ function eksekusiSkill(targetIndex) {
                 }
                 target.voteDibatalkan = true;
                 pesan = "🌀 Pengacau: vote <b>" + target.nama + "</b> tidak dihitung ronde ini.";
+                break;
+
+            case "pembungkam":
+                if (dilindungiGuardianAktif(targetIndex)) {
+                    pesan = "🛡️ Guardian melindungi <b>" + target.nama + "</b> dari Pembungkam!";
+                    break;
+                }
+                target.dibungkam = true;
+                pesan = "🤐 Pembungkam: <b>" + target.nama + "</b> tidak bisa vote ronde ini.";
                 break;
 
             case "fitnah":
@@ -6428,7 +6532,7 @@ function eksekusiSkill(targetIndex) {
             hidupkan:"heal", resusitasi:"heal", defibrilator:"heal", obat_ajaib:"heal", darurat:"heal", transplantasi:"heal", diagnosis:"heal", operasi:"heal", antidot:"heal",
             pengintai:"info", glicht:"info", engineer:"info", arwah_spy:"info", survivor:"info", traitor:"info", mayor:"vote", mayor_spy:"vote", hakim:"vote", godfather:"vote",
             dementor:"steal", kaito:"steal", changer:"transform", gluto:"transform", doppleganger:"transform", si_pengganti:"transform", lord:"shield", king:"shield", penjebak:"trap", pemantau:"scan",
-            pengacau:"vote", fitnah:"vote", provokator:"vote", chaos:"vote",
+            pengacau:"vote", fitnah:"vote", pembungkam:"vote", provokator:"vote", chaos:"vote",
             arsonit:"death", joker:"death",
             time_traveler:"time", cermin_balik:"shield", penyamar_netral:"info", penjudi:"info",
             tebak_peran:"scan", intai_tebak:"scan", duel_identitas:"scan", pemburu_tebak:"scan", sniper_tebak:"scan", cek_identitas:"scan",
@@ -6601,6 +6705,7 @@ window.pakaiHero = function() {
             pemain[i].ditahan = false;
             pemain[i].ditahanRonde = 0;
             pemain[i].dimakan = false;
+            pemain[i].dibungkam = false;
             pemain[i].voteDibatalkan = false;
             pemain[i].antiKebal = false;
             pemain[i].diracunConjurer = false;
@@ -6692,6 +6797,7 @@ window.pakaiAntihero = function() {
             pemain[i].ditahan = false;
             pemain[i].ditahanRonde = 0;
             pemain[i].dimakan = false;
+            pemain[i].dibungkam = false;
             pemain[i].voteDibatalkan = false;
             pemain[i].antiKebal = false;
             pemain[i].diracunConjurer = false;
@@ -7506,9 +7612,9 @@ function mulaiVoting() {
 }
 
 function bisaVote(p) {
-    // Hantu bisa vote meskipun mati; yang ditahan / dimakan Gluttony / dikendalikan Dalang tidak bisa
+    // Hantu bisa vote meskipun mati; yang ditahan / dimakan Gluttony / dibungkam / dikendalikan Dalang tidak bisa
     if (!p) return false;
-    if (p.ditahan || p.dimakan) return false;
+    if (p.ditahan || p.dimakan || p.dibungkam) return false;
     if (p.sudahVoteOlehDalang || p.dikendalikanDalang) return false;
     // Pemburu (Warga) salah tebak: tidak ada giliran di sesi voting
     if ((p.hakVoteDiblokir || 0) > 0) return false;
@@ -7976,6 +8082,7 @@ function resetStatusRonde() {
     for (var i = 0; i < pemain.length; i++) {
         pemain[i].kebal = false;
         pemain[i].dimakan = false;
+        pemain[i].dibungkam = false;
         pemain[i].engineerSembunyiVote = false;
         // Hacker: teretas bertahan 1 ronde (teretasRonde di-set saat skill dipakai)
         if (pemain[i].teretasRonde && pemain[i].teretasRonde > 0) {
@@ -7996,6 +8103,7 @@ function resetStatusRonde() {
             pemain[i].ditahanRonde = 0;
         }
         pemain[i].voteDibatalkan = false;
+        pemain[i].dibungkam = false;
         pemain[i].antiKebal = false;
         pemain[i].rolePalsu = null;
         pemain[i].swaperWillUse = false;
@@ -9276,14 +9384,33 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     var MIN_PLAYERS = 3;
     var MAX_PLAYERS = 12;
     var RESULT_SEC = 12;
+    var JUSTICE_SEC = 30;      // batas waktu Keadilan memutuskan saat voting seri
     var DISC_OPTIONS = [60, 120, 180, 300];
     var VOTE_OPTIONS = [30, 60, 90];
     // Peran TIDAK WAJIB: host bisa mengaktifkan / menonaktifkan di lobby. Tambah peran baru cukup dengan menambah item di sini.
     var OPT_ROLES = [
         { key: 'guardian', icon: '🛡️', name: 'Guardian', def: true,
           desc: 'Tim Warga • 1 pemain. Saat diskusi bisa melindungi 1 pemain dari eliminasi voting (1× seumur permainan).' },
+        { key: 'polisi', icon: '👮', name: 'Polisi', def: true,
+          desc: 'Tim Warga • menggantikan 1 Warga biasa. Saat diskusi bisa menahan 1 pemain: target tidak bisa vote dan tidak bisa memakai skill selama 2 ronde (1× seumur permainan).' },
         { key: 'gluttony', icon: '🍖', name: 'Gluttony', def: true,
           desc: 'Tim Spy • menggantikan 1 Spy biasa (jumlah Spy tidak bertambah). Saat diskusi bisa memakan 1 pemain (2× seumur permainan, 1× per ronde): target tidak bisa skill, tidak bisa vote, dan hilang dari pilihan voting ronde itu.' },
+        { key: 'hantu', icon: '👻', name: 'Hantu', def: true,
+          desc: 'Tim Warga • menggantikan 1 Warga biasa. Setelah tereliminasi, Hantu tetap bisa memberi suara di sesi voting (ia tidak hidup kembali dan tidak dihitung sebagai pemain hidup).' },
+        { key: 'keadilan', icon: '⚖️', name: 'Keadilan', def: true,
+          desc: 'Tim Warga • menggantikan 1 Warga biasa. Jika voting seri, dialah yang memutuskan siapa yang tereliminasi (atau tidak ada) — bahkan setelah ia sendiri tereliminasi. Pilihan hanya muncul saat hasil voting seri.' },
+        { key: 'penipu', icon: '🎭', name: 'Penipu', def: true,
+          desc: 'Tim Spy • menggantikan 1 Spy biasa (jumlah Spy tidak bertambah). Skill Meniru Nama (2× seumur permainan, 1× per ronde, boleh disimpan): pilih 1 target; di sesi voting ronde itu nama Penipu diganti menjadi nama target dan tampil acak tepat di atas atau di bawah nama target (dua entri nama yang sama) agar pemilih bingung.' },
+        { key: 'changer', icon: '🔀', name: 'Changer', def: true,
+          desc: 'Tim Spy • menggantikan 1 Spy biasa (jumlah Spy tidak bertambah). Sekali seumur permainan (boleh disimpan dulu) menukar peran dan kata dengan 1 pemain: ia mengambil peran, kata, dan skill target, sedangkan target menjadi Spy (Changer) tanpa skill. Pemain yang ditukar tidak bisa menukar lagi.' },
+        { key: 'pembungkam', icon: '🤐', name: 'Pembungkam', def: true,
+          desc: 'Tim Spy • menggantikan 1 Spy biasa (jumlah Spy tidak bertambah). Saat diskusi bisa membungkam 1 pemain: target tidak bisa vote di voting ronde itu (2× seumur permainan, 1× per ronde).' },
+        { key: 'pengacau', icon: '🌀', name: 'Pengacau', def: true,
+          desc: 'Tim Spy • menggantikan 1 Spy biasa (jumlah Spy tidak bertambah). Saat diskusi bisa mengacau 1 pemain: vote yang dikirim target tidak dihitung di voting ronde itu (2× seumur permainan, 1× per ronde).' },
+        { key: 'fitnah', icon: '📢', name: 'Fitnah', def: true,
+          desc: 'Tim Spy • menggantikan 1 Spy biasa (jumlah Spy tidak bertambah). Saat diskusi bisa memfitnah 1 pemain: target mendapat +1 vote otomatis di voting ronde itu (2× seumur permainan, 1× per ronde).' },
+        { key: 'hacker', icon: '💻', name: 'Hacker', def: true,
+          desc: 'Tim Spy • menggantikan 1 Spy biasa (jumlah Spy tidak bertambah). Saat diskusi bisa meretas 1 pemain: seluruh skill target (termasuk skill sesi voting) dinonaktifkan ronde itu (3× seumur permainan, 1× per ronde).' },
         { key: 'swapper', icon: '🔄', name: 'Swapper', def: true,
           desc: 'Tim Warga • menggantikan 1 Warga biasa. Saat diskusi bisa memilih 2 pemain: seluruh suara (hasil vote) keduanya ditukar di ronde itu (2× seumur permainan, 1× per ronde).' },
         { key: 'swapperspy', icon: '🔄', name: 'Swapper Spy', def: true,
@@ -9291,21 +9418,45 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         { key: 'mayor', icon: '🎖️', name: 'Mayor', def: true,
           desc: 'Tim Warga • menggantikan 1 Warga biasa. Saat voting bisa MENYIMPAN suara (tanpa batas) untuk dipakai nanti: target mendapat +1 vote normal + seluruh suara tersimpan.' },
         { key: 'mayorspy', icon: '🎖️', name: 'Mayor Spy', def: true,
-          desc: 'Tim Spy • menggantikan 1 Spy biasa. Skill sama seperti Mayor (simpan suara tanpa batas, dipakai nanti).' }
+          desc: 'Tim Spy • menggantikan 1 Spy biasa. Skill sama seperti Mayor (simpan suara tanpa batas, dipakai nanti).' },
+        { key: 'pemburu', icon: '🏹', name: 'Pemburu', def: true,
+          desc: 'Tim Warga • menggantikan 1 Warga biasa. Saat diskusi bisa memilih 1 pemain lalu menebak perannya (dari peran yang ada di permainan): tebakan benar = target tereliminasi, tebakan salah = Pemburu sendiri yang tereliminasi. Skill tanpa batas selama Pemburu belum tereliminasi (maksimal 1× per ronde).' },
+        { key: 'pemburuspy', icon: '🏹', name: 'Pemburu Spy', def: true,
+          desc: 'Tim Spy • menggantikan 1 Spy biasa. Skill sama seperti Pemburu: pilih 1 pemain lalu tebak perannya — benar = target tereliminasi, salah = Pemburu Spy sendiri yang tereliminasi. Tanpa batas selama belum tereliminasi (maksimal 1× per ronde).' }
     ];
-    var SKILL_MAX = { guardian: 1, gluttony: 2, swapper: 2, swapperspy: 1 };     // batas pemakaian skill per game
-    var FLAG_OF = { guardian: 'guardian', swapper: 'swapper', mayor: 'mayor', gluttony: 'gluttony', swapperspy: 'swapperSpy', mayorspy: 'mayorSpy' };   // kunci peran -> properti pemain
+    var SKILL_MAX = { guardian: 1, polisi: 1, hacker: 3, fitnah: 2, pengacau: 2, pembungkam: 2, changer: 1, penipu: 2, gluttony: 2, swapper: 2, swapperspy: 1 };     // batas pemakaian skill per game
+    var FLAG_OF = { guardian: 'guardian', polisi: 'polisi', hacker: 'hacker', fitnah: 'fitnah', pengacau: 'pengacau', pembungkam: 'pembungkam', changer: 'changer', penipu: 'penipu', hantu: 'hantu', keadilan: 'keadilan', swapper: 'swapper', mayor: 'mayor', gluttony: 'gluttony', swapperspy: 'swapperSpy', mayorspy: 'mayorSpy', pemburu: 'pemburu', pemburuspy: 'pemburuSpy' };   // kunci peran -> properti pemain
+    var OPT_SPY_KEYS = ['gluttony', 'penipu', 'changer', 'pembungkam', 'pengacau', 'fitnah', 'hacker', 'swapperspy', 'mayorspy', 'pemburuspy'];
+    function optTeam(k) { return OPT_SPY_KEYS.indexOf(k) >= 0 ? 'spy' : 'warga'; }
     function optInfo(k) { return OPT_ROLES.filter(function (r) { return r.key === k; })[0]; }
     // Tampilan skill di client (tombol pojok kanan bawah + popup pilih target)
     var SKILLS = {
         guardian: { icon: '🛡️', name: 'Skill Guardian', doing: 'Melindungi ', confirm: '🛡️ LINDUNGI PEMAIN INI', mark: '🛡️ ',
             info: 'Pilih 1 pemain yang dilindungi dari <b>eliminasi voting</b> ronde ini.<br>⚠️ Hanya bisa dipakai <b>1× seumur permainan</b>.' },
+        polisi: { icon: '👮', name: 'Skill Polisi', doing: 'Menahan ', confirm: '👮 TAHAN PEMAIN INI', mark: '👮 ',
+            info: 'Pilih 1 pemain untuk <b>ditahan</b>: dia <b>tidak bisa vote</b> dan <b>tidak bisa memakai skill</b> selama <b>2 ronde</b> (ronde ini + ronde berikutnya).<br>⚠️ Hanya bisa dipakai <b>1× seumur permainan</b>.' },
+        penipu: { icon: '🎭', name: 'Skill Penipu', doing: 'Meniru nama ', confirm: '🎭 TIRU NAMA PEMAIN INI', mark: '🎭 ', spy: true,
+            info: 'Pilih 1 pemain untuk <b>ditiru namanya</b>. Di <b>sesi voting</b> ronde ini namamu diganti menjadi nama target dan tampil <b>acak tepat di atas atau di bawah</b> nama target (dua entri nama yang sama) — pemilih jadi bingung mana yang asli.<br>⚠️ Bisa dipakai <b>2×</b> seumur permainan, maksimal 1× per ronde. Boleh disimpan.' },
+        changer: { icon: '🔀', name: 'Skill Changer', doing: 'Menukar dengan ', confirm: '🔀 TUKAR PERAN & KATA', mark: '🔀 ', spy: true,
+            info: 'Pilih 1 pemain untuk <b>ditukar</b>: kamu mengambil <b>peran, kata, dan skill</b>-nya, sedangkan dia menjadi <b>Spy (Changer)</b> dengan katamu dan tanpa skill.<br>⚠️ Hanya <b>1×</b> seumur permainan — boleh disimpan dulu. Pemain yang ditukar tidak bisa menukar lagi.' },
+        pembungkam: { icon: '🤐', name: 'Skill Pembungkam', doing: 'Membungkam ', confirm: '🤐 BUNGKAM PEMAIN INI', mark: '🤐 ', spy: true,
+            info: 'Pilih 1 pemain untuk <b>dibungkam</b>: dia <b>tidak bisa vote</b> di voting ronde ini (skill lainnya tetap bisa dipakai).<br>⚠️ Bisa dipakai <b>2×</b> seumur permainan, maksimal 1× per ronde.' },
+        pengacau: { icon: '🌀', name: 'Skill Pengacau', doing: 'Mengacau ', confirm: '🌀 BATALKAN VOTE PEMAIN INI', mark: '🌀 ', spy: true,
+            info: 'Pilih 1 pemain: <b>vote yang dia kirim tidak dihitung</b> di voting ronde ini.<br>⚠️ Bisa dipakai <b>2×</b> seumur permainan, maksimal 1× per ronde.' },
+        fitnah: { icon: '📢', name: 'Skill Fitnah', doing: 'Memfitnah ', confirm: '📢 FITNAH PEMAIN INI', mark: '📢 ', spy: true,
+            info: 'Pilih 1 pemain untuk <b>difitnah</b>: dia mendapat <b>+1 vote otomatis</b> di voting ronde ini.<br>⚠️ Bisa dipakai <b>2×</b> seumur permainan, maksimal 1× per ronde.' },
+        hacker: { icon: '💻', name: 'Skill Hacker', doing: 'Meretas ', confirm: '💻 RETAS PEMAIN INI', mark: '💻 ', spy: true,
+            info: 'Pilih 1 pemain untuk <b>diretas</b>: seluruh <b>skill</b>-nya (termasuk skill sesi voting) <b>dinonaktifkan</b> ronde ini.<br>⚠️ Bisa dipakai <b>3×</b> seumur permainan, maksimal 1× per ronde.' },
         gluttony: { icon: '🍖', name: 'Skill Gluttony', doing: 'Memakan ', confirm: '🍖 MAKAN PEMAIN INI', mark: '🍖 ',
             info: 'Pilih 1 pemain untuk <b>dimakan</b> ronde ini: target <b>tidak bisa skill</b>, <b>tidak bisa vote</b>, dan <b>hilang dari pilihan voting</b>.<br>⚠️ Bisa dipakai <b>2×</b> seumur permainan, maksimal 1× per ronde.' },
         swapper: { icon: '🔄', name: 'Skill Swapper', doing: 'Menukar ', confirm: '🔄 TUKAR SUARA 2 PEMAIN', mark: '🔄 ', pick: 2, self: true,
             info: 'Pilih <b>2 pemain</b>: seluruh suara (hasil vote) keduanya akan <b>ditukar</b> di hasil voting ronde ini.<br>⚠️ Bisa dipakai <b>2×</b> seumur permainan, maksimal 1× per ronde.' },
         swapperspy: { icon: '🔄', name: 'Skill Swapper Spy', doing: 'Menukar ', confirm: '🔄 TUKAR SUARA 2 PEMAIN', mark: '🔄 ', pick: 2, self: true, spy: true,
-            info: 'Pilih <b>2 pemain</b>: seluruh suara (hasil vote) keduanya akan <b>ditukar</b> di hasil voting ronde ini.<br>⚠️ Hanya bisa dipakai <b>1×</b> seumur permainan.' }
+            info: 'Pilih <b>2 pemain</b>: seluruh suara (hasil vote) keduanya akan <b>ditukar</b> di hasil voting ronde ini.<br>⚠️ Hanya bisa dipakai <b>1×</b> seumur permainan.' },
+        pemburu: { icon: '🏹', name: 'Skill Pemburu', doing: 'Memburu ', confirm: '🏹 TEBAK PERAN SEKARANG', mark: '🏹 ', guess: true,
+            info: 'Pilih 1 pemain, lalu <b>tebak perannya</b> (dari peran yang ada di permainan ini).<br>✅ Tebakan <b>benar</b> → pemain itu langsung <b>tereliminasi</b>.<br>❌ Tebakan <b>salah</b> → kamu yang <b>tereliminasi</b>.<br>♾️ Tanpa batas selama kamu belum tereliminasi (maksimal 1× per ronde).' },
+        pemburuspy: { icon: '🏹', name: 'Skill Pemburu Spy', doing: 'Memburu ', confirm: '🏹 TEBAK PERAN SEKARANG', mark: '🏹 ', guess: true, spy: true,
+            info: 'Pilih 1 pemain, lalu <b>tebak perannya</b> (dari peran yang ada di permainan ini).<br>✅ Tebakan <b>benar</b> → pemain itu langsung <b>tereliminasi</b>.<br>❌ Tebakan <b>salah</b> → kamu yang <b>tereliminasi</b>.<br>♾️ Tanpa batas selama kamu belum tereliminasi (maksimal 1× per ronde).' }
     };
     SKILLS.gluttony.spy = true;
     function optDefaults() { var o = {}; OPT_ROLES.forEach(function (r) { o[r.key] = r.def; }); return o; }
@@ -9369,6 +9520,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     var selectedTarget = null;
     var mayorUseBank = false;   // Mayor: pakai suara tersimpan pada voting ini?
     var skillTargets = [];      // pilihan sementara di popup skill (1 target, atau 2 untuk Swapper)
+    var skillGuess = null;      // Pemburu: tebakan peran (kunci peran) di popup skill
     var chatSeen = {};
     var wake = null, wakePending = false;
     var toastTimer = null;
@@ -9556,11 +9708,92 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             discussSec: 180, voteSec: 60,
             timer: null, endsAt: 0, pair: null, result: null, winner: null, chatSeq: 0, chatLog: [],
             guard: null,                // { target, round, by } — perlindungan Guardian ronde ini
+            roleList: [],               // kunci peran yang ada di permainan ini (pilihan tebakan Pemburu)
             swaps: [],                  // [{ by, a, b }] — tukar suara (Swapper) yang menunggu hasil voting ronde ini
             optRoles: optDefaults()     // status aktif/nonaktif peran opsional
         };
     }
     function nextId() { H.seq++; return 'p' + H.seq; }
+    // Polisi: pemain ditahan selama 2 ronde (ronde saat ditahan + ronde berikutnya) — tidak bisa vote & tidak bisa memakai skill.
+    function isDetained(p) { return !!p && (p.detainUntil || 0) > 0 && p.detainUntil >= H.round; }
+    // Pembungkam: target tidak bisa vote HANYA di ronde ia dibungkam (skill lain target tidak terpengaruh).
+    function isMuted(p) { return !!p && (p.mutedRound || 0) > 0 && p.mutedRound === H.round; }
+    // Changer: seluruh "identitas peran" (tim, kata, peran khusus + statusnya) berpindah tangan. Status ke-pemain (dimakan / ditahan /
+    // diretas / dibungkam) tetap menempel pada orangnya. Referensi pemilik skill di ronde ini (Guardian, Swapper) ikut dialihkan.
+    var ROLE_FIELDS = ['role', 'word', 'guardian', 'guardUsed', 'polisi', 'polisiUsed', 'polisiRound', 'polisiTarget',
+        'hacker', 'hackUses', 'hackRound', 'hackTarget', 'fitnah', 'fitnahUses', 'fitnahRound', 'fitnahTarget',
+        'pengacau', 'pengacauUses', 'pengacauRound', 'pengacauTarget', 'pembungkam', 'muteUses', 'muteRound', 'muteTarget',
+        'keadilan', 'gluttony', 'gluttonyUses', 'gluttonyRound', 'gluttonyTarget', 'swapper', 'swapperSpy', 'swapUses', 'swapRound',
+        'mayor', 'mayorSpy', 'bank', 'changer', 'changerUsed', 'hantu', 'penipu', 'penipuUses', 'penipuRound', 'penipuTarget',
+        'pemburu', 'pemburuSpy', 'pemburuUsed', 'pemburuRound', 'pemburuTarget'];
+    function changeRoles(a, b) {
+        var A = {}, B = {};
+        ROLE_FIELDS.forEach(function (k) { A[k] = a[k]; B[k] = b[k]; });
+        ROLE_FIELDS.forEach(function (k) { a[k] = B[k]; b[k] = A[k]; });
+        if (H.guard) { if (H.guard.by === a.id) H.guard.by = b.id; else if (H.guard.by === b.id) H.guard.by = a.id; }
+        H.swaps.forEach(function (sw) { if (sw.by === a.id) sw.by = b.id; else if (sw.by === b.id) sw.by = a.id; });
+        b.changer = true; b.changerUsed = true;                    // target menjadi Changer dengan skill habis
+        a.changer = false; a.changerUsed = false;                  // pengguna sudah bukan Changer (memegang peran target)
+        a.swappedRole = 'by'; b.swappedRole = 'to';
+    }
+    // Hantu: setelah tereliminasi tetap boleh vote (tidak hidup kembali). Pemain lain yang mati hanya menonton.
+    function canBallot(p) { return !!p && p.connected && !p.left && (p.alive || !!p.hantu) && !cannotVote(p); }
+    function cannotVote(p) { return !!p && (p.eaten || isDetained(p) || isMuted(p)); }
+    // Hacker: skill target dinonaktifkan HANYA di ronde ia diretas (skill sesi diskusi maupun sesi voting). Target tetap boleh vote biasa.
+    function isHacked(p) { return !!p && (p.hackedRound || 0) > 0 && p.hackedRound === H.round; }
+    // Skill yang sudah dipakai pemain ini di ronde berjalan dibatalkan (pemakaian dikembalikan) karena skill-nya dinonaktifkan
+    // (dimakan Gluttony / ditahan Polisi / diretas Hacker). Guardian & Swapper dibatalkan saat hasil voting dihitung.
+    function cancelInRoundSkill(q) {
+        if (q.gluttony && q.gluttonyRound === H.round && q.gluttonyTarget) {
+            var freed = byId(q.gluttonyTarget); if (freed) freed.eaten = false;
+            q.gluttonyUses = Math.max(0, (q.gluttonyUses || 0) - 1);
+            q.gluttonyRound = 0; q.gluttonyTarget = null;
+        }
+        if (q.polisi && q.polisiRound === H.round && q.polisiTarget) {
+            var released = byId(q.polisiTarget); if (released) released.detainUntil = 0;
+            q.polisiUsed = false; q.polisiRound = 0; q.polisiTarget = null;
+        }
+        if (q.hacker && q.hackRound === H.round && q.hackTarget) {
+            var healed = byId(q.hackTarget); if (healed) healed.hackedRound = 0;
+            q.hackUses = Math.max(0, (q.hackUses || 0) - 1);
+            q.hackRound = 0; q.hackTarget = null;
+        }
+        if (q.pembungkam && q.muteRound === H.round && q.muteTarget) {
+            var unmuted = byId(q.muteTarget); if (unmuted) unmuted.mutedRound = 0;
+            q.muteUses = Math.max(0, (q.muteUses || 0) - 1);
+            q.muteRound = 0; q.muteTarget = null;
+        }
+    }
+    // Pemburu / Pemburu Spy — kunci peran pemain (dipakai menilai tebakan). Kunci sama dengan OPT_ROLES; 'warga' / 'spy' = tanpa peran khusus.
+    function roleKeyOf(q) {
+        if (q.role === 'spy') {
+            return q.pemburuSpy ? 'pemburuspy' : q.gluttony ? 'gluttony' : q.hacker ? 'hacker' : q.fitnah ? 'fitnah' : q.pengacau ? 'pengacau' :
+                q.pembungkam ? 'pembungkam' : q.changer ? 'changer' : q.penipu ? 'penipu' : q.swapperSpy ? 'swapperspy' : q.mayorSpy ? 'mayorspy' : 'spy';
+        }
+        return q.pemburu ? 'pemburu' : q.guardian ? 'guardian' : q.polisi ? 'polisi' : q.keadilan ? 'keadilan' : q.hantu ? 'hantu' :
+            q.swapper ? 'swapper' : q.mayor ? 'mayor' : 'warga';
+    }
+    // Pilihan tebakan = peran yang ada di permainan ini (sama dengan yang diumumkan saat permainan dimulai).
+    function guessOptions() {
+        var out = [{ key: 'warga', label: '🧑 Warga biasa' }, { key: 'spy', label: '🕵️ Spy biasa' }].filter(function (o) { return H.roleList.indexOf(o.key) >= 0; });
+        OPT_ROLES.forEach(function (r) { if (H.roleList.indexOf(r.key) >= 0) out.push({ key: r.key, label: r.icon + ' ' + r.name }); });
+        return out;
+    }
+    // Pemburu menembak: tebakan benar -> target tereliminasi; salah -> Pemburu yang tereliminasi. Berlaku langsung saat sesi diskusi.
+    function huntShot(hunter, target, guess) {
+        var right = roleKeyOf(target) === guess;
+        var loser = right ? target : hunter;
+        cancelInRoundSkill(loser);                                                     // skill yang sedang dipakai yang tereliminasi ronde ini dibatalkan
+        if (H.guard && H.guard.by === loser.id) H.guard = null;
+        H.swaps = H.swaps.filter(function (sw) { return sw.by !== loser.id; });
+        loser.alive = false;
+        var team = loser.role === 'spy' ? 'SPY' : 'WARGA';
+        if (right) addSystem('🏹 Seorang Pemburu menebak peran ' + target.name + ' dengan benar! 💀 ' + target.name + ' tereliminasi — ternyata ' + team + '.');
+        else addSystem('🏹 ' + hunter.name + ' memakai skill Pemburu, tetapi tebakannya salah! 💀 ' + hunter.name + ' tereliminasi — ternyata ' + team + '.');
+        var w = checkWinner();
+        if (w) { endGame(w); return; }
+        broadcastState();
+    }
     function hostPlayer() { return H && H.players.filter(function (p) { return p.isHost; })[0]; }
     function byId(id) { return H.players.filter(function (p) { return p.id === id; })[0]; }
     function nameOf(id) { var p = byId(id); return p ? p.name : '?'; }
@@ -9722,10 +9955,24 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function addSystem(text) { postChat({ system: true, text: text }); }
     function clearChatAll() { H.chatLog = []; broadcast({ t: 'chatclear' }); clearChat(); }
 
+    // Penipu: di sesi voting, entri Penipu tampil dengan nama target dan diletakkan tepat di atas / bawah entri target.
+    // Berlaku untuk semua penerima KECUALI Penipu sendiri (ia melihat daftar asli).
+    function fakeList(list) {
+        var fi = -1, ti = -1;
+        list.forEach(function (x, i) { if (x.id === H.fake.by) fi = i; if (x.id === H.fake.target) ti = i; });
+        if (fi < 0 || ti < 0) return list;
+        var fk = {}; Object.keys(list[fi]).forEach(function (k) { fk[k] = list[fi][k]; });
+        fk.name = list[ti].name;
+        var rest = list.filter(function (x, i) { return i !== fi; });
+        var at = 0; rest.forEach(function (x, i) { if (x.id === H.fake.target) at = i; });
+        rest.splice(H.fake.above ? at : at + 1, 0, fk);
+        return rest;
+    }
+
     function stateFor(p) {
         var ph = H.phase;
         var need = H.players.filter(function (q) { return q.alive && q.connected; });
-        var needV = need.filter(function (q) { return !q.eaten; });     // yang masih boleh vote (tidak dimakan)
+        var needV = H.players.filter(canBallot);     // yang masih boleh vote (hidup / Hantu; tidak dimakan / ditahan / dibungkam)
         var st = {
             t: 'state', code: roomCode, phase: ph, round: H.round, you: p.id,
             settings: { discussSec: H.discussSec, voteSec: H.voteSec, roles: H.optRoles },
@@ -9742,8 +9989,9 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             myVote: p.vote,
             minPlayers: MIN_PLAYERS
         };
-        if (ph !== 'lobby') st.me = { role: p.role, word: p.word, guardian: !!p.guardian, gluttony: !!p.gluttony, swapper: !!p.swapper, swapperSpy: !!p.swapperSpy,
-            mayor: !!(p.mayor || p.mayorSpy), bank: (p.mayor || p.mayorSpy) ? (p.bank || 0) : 0, eaten: !!p.eaten };
+        if (ph === 'voting' && H.fake && p.id !== H.fake.by) st.players = fakeList(st.players);
+        if (ph !== 'lobby') st.me = { role: p.role, word: p.word, guardian: !!p.guardian, polisi: !!p.polisi, hacker: !!p.hacker, fitnah: !!p.fitnah, pengacau: !!p.pengacau, keadilan: !!p.keadilan, pembungkam: !!p.pembungkam, hantu: !!p.hantu, penipu: !!p.penipu, changer: !!p.changer, changerUsed: !!p.changerUsed, swapped: p.swappedRole || null, gluttony: !!p.gluttony, swapper: !!p.swapper, swapperSpy: !!p.swapperSpy,
+            pemburu: !!(p.pemburu || p.pemburuSpy), mayor: !!(p.mayor || p.mayorSpy), bank: (p.mayor || p.mayorSpy) ? (p.bank || 0) : 0, eaten: !!p.eaten, detained: isDetained(p), hacked: isHacked(p), muted: isMuted(p) };
         // Info skill hanya dikirim ke pemain pemilik skill itu sendiri
         if (ph !== 'lobby' && ph !== 'end') {
             if (p.guardian) {
@@ -9756,14 +10004,40 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 var swKey = p.swapperSpy ? 'swapperspy' : 'swapper';
                 var mySwap = H.swaps.filter(function (x) { return x.by === p.id; })[0];
                 st.skill = { key: swKey, left: SKILL_MAX[swKey] - (p.swapUses || 0), usedNow: !!mySwap, target: mySwap ? mySwap.a : null, target2: mySwap ? mySwap.b : null };
+            } else if (p.penipu) {
+                var nUsed = p.penipuRound === H.round && !!p.penipuTarget;
+                st.skill = { key: 'penipu', left: SKILL_MAX.penipu - (p.penipuUses || 0), usedNow: nUsed, target: nUsed ? p.penipuTarget : null };
+            } else if (p.changer && !p.changerUsed) {
+                st.skill = { key: 'changer', left: SKILL_MAX.changer, usedNow: false, target: null };
+            } else if (p.pembungkam) {
+                var mUsed = p.muteRound === H.round && !!p.muteTarget;
+                st.skill = { key: 'pembungkam', left: SKILL_MAX.pembungkam - (p.muteUses || 0), usedNow: mUsed, target: mUsed ? p.muteTarget : null };
+            } else if (p.pengacau) {
+                var cUsed = p.pengacauRound === H.round && !!p.pengacauTarget;
+                st.skill = { key: 'pengacau', left: SKILL_MAX.pengacau - (p.pengacauUses || 0), usedNow: cUsed, target: cUsed ? p.pengacauTarget : null };
+            } else if (p.fitnah) {
+                var fUsed = p.fitnahRound === H.round && !!p.fitnahTarget;
+                st.skill = { key: 'fitnah', left: SKILL_MAX.fitnah - (p.fitnahUses || 0), usedNow: fUsed, target: fUsed ? p.fitnahTarget : null };
+            } else if (p.hacker) {
+                var hUsed = p.hackRound === H.round && !!p.hackTarget;
+                st.skill = { key: 'hacker', left: SKILL_MAX.hacker - (p.hackUses || 0), usedNow: hUsed, target: hUsed ? p.hackTarget : null };
+            } else if (p.polisi) {
+                var pUsed = p.polisiRound === H.round && !!p.polisiTarget;
+                st.skill = { key: 'polisi', left: p.polisiUsed ? 0 : SKILL_MAX.polisi, usedNow: pUsed, target: pUsed ? p.polisiTarget : null };
+            } else if (p.pemburu || p.pemburuSpy) {
+                var buKey = p.pemburuSpy ? 'pemburuspy' : 'pemburu';
+                var buUsed = p.pemburuRound === H.round && !!p.pemburuTarget;
+                st.skill = { key: buKey, left: buUsed ? 0 : 1, usedNow: buUsed, target: buUsed ? p.pemburuTarget : null, options: guessOptions() };
             }
+            // Skill dinonaktifkan (ditahan Polisi / diretas Hacker): penyebab sengaja tidak dikirim ke client
+            if (st.skill && (isDetained(p) || isHacked(p))) st.skill.blocked = true;
         }
         if (ph === 'result') st.result = H.result;
         if (ph === 'end') {
             st.winner = H.winner;
             st.pair = H.pair;
             st.reveal = H.players.map(function (q) {
-                return { id: q.id, name: q.name, role: q.role, guardian: !!q.guardian, gluttony: !!q.gluttony, swapper: !!q.swapper, swapperSpy: !!q.swapperSpy, mayor: !!q.mayor, mayorSpy: !!q.mayorSpy, word: q.word, alive: q.alive, left: q.left };
+                return { id: q.id, name: q.name, role: q.role, guardian: !!q.guardian, polisi: !!q.polisi, hacker: !!q.hacker, fitnah: !!q.fitnah, pengacau: !!q.pengacau, keadilan: !!q.keadilan, pembungkam: !!q.pembungkam, changer: !!q.changer, hantu: !!q.hantu, penipu: !!q.penipu, gluttony: !!q.gluttony, swapper: !!q.swapper, swapperSpy: !!q.swapperSpy, mayor: !!q.mayor, mayorSpy: !!q.mayorSpy, pemburu: !!q.pemburu, pemburuSpy: !!q.pemburuSpy, word: q.word, alive: q.alive, left: q.left };
             });
         }
         return st;
@@ -9793,10 +10067,10 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 break;
             case 'chat': handleChat(p, m); break;
             case 'vote':
-                if (H.phase !== 'voting' || !p.alive || p.eaten || p.vote) break;      // yang dimakan Gluttony tidak bisa vote
+                if (H.phase !== 'voting' || !canBallot(p) || p.vote) break;      // yang dimakan Gluttony / ditahan Polisi / dibungkam Pembungkam tidak bisa vote
                 if (m.save === true) {
                     // Mayor / Mayor Spy: SIMPAN suara — tidak memilih ronde ini, bank +1 (tanpa batas)
-                    if (!(p.mayor || p.mayorSpy)) break;
+                    if (!(p.mayor || p.mayorSpy) || isHacked(p)) break;                // diretas: skill simpan suara nonaktif
                     p.bank = (p.bank || 0) + 1;
                     p.vote = '@save'; p.voteW = 1;
                     if (!checkAllVoted()) broadcastState();
@@ -9805,7 +10079,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 var t = byId(m.target);
                 if (!t || !t.alive || t.eaten || t.id === p.id) break;                 // dan tidak bisa dipilih
                 p.voteW = 1;
-                if (m.useBank === true && (p.mayor || p.mayorSpy) && (p.bank || 0) > 0) {
+                if (m.useBank === true && (p.mayor || p.mayorSpy) && !isHacked(p) && (p.bank || 0) > 0) {
                     p.voteW = 1 + p.bank;                                              // +1 vote normal + seluruh suara tersimpan
                     p.bank = 0;
                 }
@@ -9814,7 +10088,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 break;
             case 'skill':
                 // Skill peran khusus: hanya saat diskusi, hanya pemain hidup yang tidak dimakan, target = pemain hidup lain
-                if (H.phase !== 'discussion' || !p.alive || p.eaten) break;
+                if (H.phase !== 'discussion' || !p.alive || p.eaten || isDetained(p) || isHacked(p)) break;      // dimakan Gluttony / ditahan Polisi / diretas Hacker: skill tidak bisa dipakai
                 if (p.swapper || p.swapperSpy) {
                     // Swapper / Swapper Spy: pilih 2 pemain hidup (boleh termasuk diri sendiri); suara keduanya ditukar saat hasil voting
                     var swMax = p.swapperSpy ? SKILL_MAX.swapperspy : SKILL_MAX.swapper;
@@ -9829,7 +10103,38 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 }
                 var tg = byId(m.target);
                 if (!tg || !tg.alive || tg.id === p.id) break;
-                if (p.guardian) {
+                if (p.polisi) {
+                    if (p.polisiUsed) break;                                  // Polisi: 1× seumur permainan
+                    p.polisiUsed = true; p.polisiRound = H.round; p.polisiTarget = tg.id;
+                    tg.detainUntil = H.round + 1;                             // ditahan ronde ini + ronde berikutnya = 2 ronde
+                    cancelInRoundSkill(tg);                                   // skill yang sudah dipakai target ronde ini dibatalkan & dikembalikan
+                } else if (p.penipu) {
+                    if ((p.penipuUses || 0) >= SKILL_MAX.penipu || p.penipuRound === H.round) break;   // 2× total, 1× per ronde
+                    p.penipuUses = (p.penipuUses || 0) + 1;
+                    p.penipuRound = H.round; p.penipuTarget = tg.id;          // berlaku saat sesi voting dimulai
+                } else if (p.changer) {
+                    if (p.changerUsed || tg.swappedRole) break;               // 1× seumur permainan; yang sudah ditukar tidak bisa ditukar lagi
+                    changeRoles(p, tg);                                       // langsung berlaku, hanya keduanya yang tahu
+                } else if (p.pembungkam) {
+                    if ((p.muteUses || 0) >= SKILL_MAX.pembungkam || p.muteRound === H.round) break;   // 2× total, 1× per ronde
+                    p.muteUses = (p.muteUses || 0) + 1;
+                    p.muteRound = H.round; p.muteTarget = tg.id;
+                    tg.mutedRound = H.round;                                  // tidak bisa vote ronde ini saja
+                } else if (p.pengacau) {
+                    if ((p.pengacauUses || 0) >= SKILL_MAX.pengacau || p.pengacauRound === H.round) break;   // 2× total, 1× per ronde
+                    p.pengacauUses = (p.pengacauUses || 0) + 1;
+                    p.pengacauRound = H.round; p.pengacauTarget = tg.id;      // vote target dibuang saat hasil voting dihitung
+                } else if (p.fitnah) {
+                    if ((p.fitnahUses || 0) >= SKILL_MAX.fitnah || p.fitnahRound === H.round) break;   // 2× total, 1× per ronde
+                    p.fitnahUses = (p.fitnahUses || 0) + 1;
+                    p.fitnahRound = H.round; p.fitnahTarget = tg.id;          // +1 vote diterapkan saat hasil voting dihitung
+                } else if (p.hacker) {
+                    if ((p.hackUses || 0) >= SKILL_MAX.hacker || p.hackRound === H.round) break;   // 3× total, 1× per ronde
+                    p.hackUses = (p.hackUses || 0) + 1;
+                    p.hackRound = H.round; p.hackTarget = tg.id;
+                    tg.hackedRound = H.round;                                 // skill target nonaktif ronde ini saja
+                    cancelInRoundSkill(tg);
+                } else if (p.guardian) {
                     if (p.guardUsed) break;                                   // Guardian: 1× seumur permainan
                     p.guardUsed = true;
                     H.guard = { target: tg.id, round: H.round, by: p.id };
@@ -9839,6 +10144,15 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                     p.gluttonyRound = H.round;
                     p.gluttonyTarget = tg.id;
                     tg.eaten = true;
+                    cancelInRoundSkill(tg);                                   // Polisi / Hacker yang dimakan setelah memakai skill: efeknya dibatalkan & dikembalikan
+                } else if (p.pemburu || p.pemburuSpy) {
+                    // Pemburu / Pemburu Spy: pilih 1 pemain + tebak perannya (harus salah satu peran yang ada di permainan). Tanpa batas total sampai tereliminasi.
+                    if (p.pemburuRound === H.round) break;                  // tanpa batas total; maksimal 1× per ronde
+                    var buGuess = String(m.guess || '');
+                    if (H.roleList.indexOf(buGuess) < 0) break;
+                    p.pemburuRound = H.round; p.pemburuTarget = tg.id;
+                    huntShot(p, tg, buGuess);                                 // eliminasi berlaku langsung; state disiarkan di dalamnya
+                    break;
                 } else break;
                 broadcastState();
                 break;
@@ -9849,6 +10163,9 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 if (DISC_OPTIONS.indexOf(d) >= 0) H.discussSec = d;
                 if (VOTE_OPTIONS.indexOf(v) >= 0) H.voteSec = v;
                 if (typeof m.role === 'string' && optKnown(m.role) && typeof m.on === 'boolean') H.optRoles[m.role] = m.on;
+                if ((m.team === 'warga' || m.team === 'spy') && typeof m.on === 'boolean') {           // aktifkan / nonaktifkan semua peran satu fraksi
+                    OPT_ROLES.forEach(function (r) { if (optTeam(r.key) === m.team) H.optRoles[r.key] = m.on; });
+                }
                 broadcastState();
                 break;
             case 'start': if (p.isHost) startGame(); break;
@@ -9864,6 +10181,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 else if (H.phase === 'voting') resolveVotes();
                 else if (H.phase === 'result') afterResult();
                 break;
+            case 'justice': decideJustice(p, m); break;
             case 'lobby': if (p.isHost && H.phase === 'end') resetToLobby(); break;
         }
     }
@@ -9901,20 +10219,32 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         H.players.forEach(function (p) {
             p.alive = true; p.ready = false; p.vote = null; p.left = false;
             p.guardian = false; p.guardUsed = false;
+            p.polisi = false; p.polisiUsed = false; p.polisiRound = 0; p.polisiTarget = null; p.detainUntil = 0;
+            p.hacker = false; p.hackUses = 0; p.hackRound = 0; p.hackTarget = null; p.hackedRound = 0;
+            p.fitnah = false; p.fitnahUses = 0; p.fitnahRound = 0; p.fitnahTarget = null;
+            p.pengacau = false; p.pengacauUses = 0; p.pengacauRound = 0; p.pengacauTarget = null;
+            p.keadilan = false;
+            p.pembungkam = false; p.muteUses = 0; p.muteRound = 0; p.muteTarget = null; p.mutedRound = 0;
+            p.changer = false; p.changerUsed = false; p.swappedRole = null;
+            p.hantu = false;
+            p.penipu = false; p.penipuUses = 0; p.penipuRound = 0; p.penipuTarget = null;
             p.gluttony = false; p.gluttonyUses = 0; p.gluttonyRound = 0; p.gluttonyTarget = null; p.eaten = false;
             p.swapper = false; p.swapperSpy = false; p.swapUses = 0; p.swapRound = 0;
             p.mayor = false; p.mayorSpy = false; p.bank = 0; p.voteW = 1;
+            p.pemburu = false; p.pemburuSpy = false; p.pemburuUsed = false; p.pemburuRound = 0; p.pemburuTarget = null;
         });
         // Peran khusus opsional MENGGANTIKAN peran biasa (jumlah Spy / Warga tidak bertambah). `order` sudah diacak:
         // indeks 0..spyN-1 = Spy, sisanya = Warga. Satu pemain hanya punya satu peran khusus; kalau peran khusus yang aktif
-        // lebih banyak dari slot yang ada (mis. hanya 1 Spy), dipilih acak.
-        var spyKeys = shuffle(['gluttony', 'swapperspy', 'mayorspy'].filter(function (k) { return H.optRoles[k]; }));
-        var wargaKeys = shuffle(['guardian', 'swapper', 'mayor'].filter(function (k) { return H.optRoles[k]; }));
-        var spyGiven = spyKeys.slice(0, spyN), wargaGiven = wargaKeys.slice(0, n - spyN);
+        // lebih banyak dari slot yang ada (mis. hanya 1 Spy, atau Warga khusus sudah menyisakan 1 Warga biasa), dipilih acak.
+        var spyKeys = shuffle(['gluttony', 'hacker', 'fitnah', 'pengacau', 'pembungkam', 'changer', 'penipu', 'swapperspy', 'mayorspy', 'pemburuspy'].filter(function (k) { return H.optRoles[k]; }));
+        var wargaKeys = shuffle(['guardian', 'polisi', 'keadilan', 'hantu', 'swapper', 'mayor', 'pemburu'].filter(function (k) { return H.optRoles[k]; }));
+        // SELALU ada minimal 1 Warga biasa (tanpa peran khusus): slot Warga khusus maksimal (jumlah Warga − 1).
+        var spyGiven = spyKeys.slice(0, spyN), wargaGiven = wargaKeys.slice(0, Math.max(0, n - spyN - 1));
         spyGiven.forEach(function (k, i) { H.players[order[i]][FLAG_OF[k]] = true; });
         wargaGiven.forEach(function (k, i) { H.players[order[spyN + i]][FLAG_OF[k]] = true; });
         function lbl(k) { var r = optInfo(k); return r.icon + ' ' + r.name; }
-        H.guard = null; H.swaps = [];
+        H.roleList = ['warga'].concat(spyN - spyGiven.length > 0 ? ['spy'] : [], spyGiven, wargaGiven);     // peran yang ada di permainan ini
+        H.guard = null; H.swaps = []; H.fake = null;
         H.round = 1; H.result = null; H.winner = null;
         clearTimer();
         clearChatAll();
@@ -9934,7 +10264,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function startDiscussion() {
         clearTimer();
         H.phase = 'discussion';
-        H.guard = null; H.swaps = [];
+        H.guard = null; H.swaps = []; H.fake = null;
         H.players.forEach(function (p) { p.vote = null; p.eaten = false; });     // efek Gluttony hanya berlaku 1 ronde
         addSystem('🗣️ Ronde ' + H.round + ' — diskusi dimulai. Jelaskan katamu tanpa menyebutnya!');
         setTimer(H.discussSec, startVoting);
@@ -9946,6 +10276,18 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         clearTimer();
         H.phase = 'voting';
         H.players.forEach(function (p) { p.vote = null; p.voteW = 1; });
+        // Penipu: peniruan nama berlaku bila Penipu masih bisa memakai skill dan target masih ada di daftar voting.
+        // Selain itu pemakaian dikembalikan (tanpa pengumuman).
+        H.fake = null;
+        H.players.forEach(function (fp) {
+            if (!fp.penipu || fp.penipuRound !== H.round || !fp.penipuTarget) return;
+            var ft = byId(fp.penipuTarget);
+            if (!fp.alive || fp.eaten || isDetained(fp) || isHacked(fp) || !ft || !ft.alive || ft.eaten) {
+                fp.penipuUses = Math.max(0, (fp.penipuUses || 0) - 1); fp.penipuRound = 0; fp.penipuTarget = null;
+                return;
+            }
+            H.fake = { by: fp.id, target: ft.id, above: Math.random() < 0.5 };     // atas / bawah dipilih acak, tetap selama voting
+        });
         addSystem('🗳️ Waktu voting! Pilih siapa yang kamu curigai sebagai Spy.');
         setTimer(H.voteSec, resolveVotes);
         broadcastState();
@@ -9953,7 +10295,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
 
     function checkAllVoted() {
         if (H.phase !== 'voting') return false;
-        var need = H.players.filter(function (p) { return p.alive && p.connected && !p.eaten; });
+        var need = H.players.filter(canBallot);
         if (need.length && need.every(function (p) { return p.vote != null; })) { resolveVotes(); return true; }
         return false;
     }
@@ -9971,37 +10313,68 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         if (H.phase !== 'voting') return;
         clearTimer();
         var aliveBefore = H.players.filter(function (p) { return p.alive; });
-        var valid = aliveBefore.filter(function (p) {
+        // Pemilih = pemain hidup + Hantu yang sudah tereliminasi (suaranya tetap dihitung normal).
+        var valid = H.players.filter(function (p) { return p.alive || p.hantu; }).filter(function (p) {
             if (!p.vote) return false;
             var t = byId(p.vote);
             return t && t.alive;
         });
+        // Pengacau: vote yang dikirim target tidak dihitung ronde ini (target tetap dianggap sudah memilih).
+        // Pemakaian dikembalikan bila pemakainya dimakan Gluttony / ditahan Polisi / diretas Hacker, atau target tidak punya vote
+        // yang bisa dibatalkan (tidak memilih, menyimpan suara, dimakan, atau ditahan). Simpanan Mayor yang terpakai dikembalikan.
+        var pengDone = [], voidIds = {};
+        H.players.forEach(function (cp) {
+            if (!cp.pengacau || cp.pengacauRound !== H.round || !cp.pengacauTarget) return;
+            var pt = byId(cp.pengacauTarget);
+            cp.pengacauRound = 0; cp.pengacauTarget = null;
+            if (!cp.alive) return;
+            if (cp.eaten || isDetained(cp) || isHacked(cp) || !pt || !pt.alive || valid.indexOf(pt) < 0 || voidIds[pt.id]) { cp.pengacauUses = Math.max(0, (cp.pengacauUses || 0) - 1); return; }
+            voidIds[pt.id] = true;
+            if ((pt.voteW || 1) > 1) { pt.bank = (pt.bank || 0) + (pt.voteW - 1); pt.voteW = 1; }
+            pengDone.push(pt.name);
+        });
+        var counted = valid.filter(function (p) { return !voidIds[p.id]; });
         // tally[id] = { n: total suara (berbobot), by: label pemilih }. Suara Mayor yang memakai simpanan bernilai 1 + simpanan.
         var tally = {};
-        valid.forEach(function (p) {
+        counted.forEach(function (p) {
             var w = p.voteW || 1, e = (tally[p.vote] = tally[p.vote] || { n: 0, by: [] });
             e.n += w;
-            e.by.push(w > 1 ? p.name + ' ×' + w : p.name);
+            var lbl = p.alive ? p.name : '👻 Hantu';                  // Hantu yang sudah mati: identitas tidak disebut
+            e.by.push(w > 1 ? lbl + ' ×' + w : lbl);
         });
-        // Skill yang berlaku di sesi voting dibatalkan bila pemiliknya dimakan Gluttony ronde ini (pemakaian dikembalikan).
+        // Skill yang berlaku di sesi voting dibatalkan bila pemiliknya dimakan Gluttony / ditahan Polisi / diretas Hacker ronde ini (pemakaian dikembalikan).
         if (H.guard) {
             var gp = byId(H.guard.by);
-            if (gp && gp.eaten) { gp.guardUsed = false; H.guard = null; }
+            if (gp && (gp.eaten || isDetained(gp) || isHacked(gp))) { gp.guardUsed = false; H.guard = null; }
         }
+        // Fitnah: target mendapat +1 vote otomatis (jadi bagian suaranya, sebelum Swapper menukar).
+        // Batal (pemakaian dikembalikan) bila pemakainya dimakan Gluttony / ditahan Polisi / diretas Hacker,
+        // atau targetnya dimakan Gluttony ronde ini (hilang dari pilihan voting).
+        var fitnahDone = [];
+        H.players.forEach(function (fp) {
+            if (!fp.fitnah || fp.fitnahRound !== H.round || !fp.fitnahTarget) return;
+            var ft = byId(fp.fitnahTarget);
+            fp.fitnahRound = 0; fp.fitnahTarget = null;
+            if (!fp.alive) return;
+            if (fp.eaten || isDetained(fp) || isHacked(fp) || !ft || !ft.alive || ft.eaten) { fp.fitnahUses = Math.max(0, (fp.fitnahUses || 0) - 1); return; }
+            var fe = (tally[ft.id] = tally[ft.id] || { n: 0, by: [] });
+            fe.n += 1; fe.by.push('📢 Fitnah');
+            fitnahDone.push(ft.name);
+        });
         // Swapper / Swapper Spy: tukar seluruh suara (beserta pemilihnya) dua target, berurutan sesuai waktu pakai.
         // Batal (pemakaian dikembalikan) bila pemakainya atau salah satu target dimakan Gluttony ronde ini.
         var swapsDone = [];
         H.swaps.forEach(function (sw) {
             var by = byId(sw.by), a = byId(sw.a), b = byId(sw.b);
             if (!by || !by.alive) return;
-            if (by.eaten || !a || !b || !a.alive || !b.alive || a.eaten || b.eaten) { by.swapUses = Math.max(0, (by.swapUses || 0) - 1); return; }
+            if (by.eaten || isDetained(by) || isHacked(by) || !a || !b || !a.alive || !b.alive || a.eaten || b.eaten) { by.swapUses = Math.max(0, (by.swapUses || 0) - 1); return; }
             var ta = tally[a.id] || { n: 0, by: [] }, tb = tally[b.id] || { n: 0, by: [] };
             tally[a.id] = tb; tally[b.id] = ta;
             swapsDone.push({ a: a.name, b: b.name });
         });
         H.swaps = [];
         var rows = Object.keys(tally).filter(function (id) { return tally[id].n > 0; }).map(function (id) {
-            return { id: id, name: nameOf(id), n: tally[id].n, by: tally[id].by };
+            return { id: id, name: nameOf(id), n: tally[id].n };     // nama pemilih tidak dikirim: hanya jumlah suara
         }).sort(function (a, b) { return b.n - a.n; });
         var top = rows.length ? rows[0].n : 0;
         var leaders = rows.filter(function (r) { return r.n === top; });
@@ -10021,7 +10394,16 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             noVote: aliveBefore.filter(function (p) { return valid.indexOf(p) < 0; }).map(function (p) { return p.name; }),
             eliminated: null, tie: wasTie, none: rows.length === 0, saved: saved, swaps: swapsDone
         };
+        // Keadilan: bila voting seri dan Keadilan (hidup ATAU sudah tereliminasi) bisa memutuskan, hasil ditunda sampai ia memilih.
+        // Bila Keadilan masih hidup tetapi skill-nya dinonaktifkan (dimakan / ditahan / diretas) ronde ini, ia tidak bisa memutuskan.
+        var jOwner = H.players.filter(function (q) { return q.keadilan && !q.left && q.connected; })[0];
+        var jPending = !!(wasTie && jOwner && !(jOwner.alive && (jOwner.eaten || isDetained(jOwner) || isHacked(jOwner))));
+        H.justiceInfo = jPending ? { guardTarget: (H.guard && H.guard.round === H.round) ? H.guard.target : null } : null;   // hanya di host
+        if (jPending) res.justice = { pending: true, candidates: leaders.map(function (r) { return { id: r.id, name: r.name }; }), choice: null, timedOut: false };
         H.guard = null;
+        if (H.fake) { var fkT = byId(H.fake.target); if (fkT) addSystem('🎭 Ada Penipu yang meniru nama ' + fkT.name + ' di sesi voting ini!'); H.fake = null; }
+        pengDone.forEach(function (nm) { addSystem('🌀 Vote ' + nm + ' tidak dihitung oleh skill Pengacau!'); });
+        fitnahDone.forEach(function (nm) { addSystem('📢 ' + nm + ' difitnah! Mendapat +1 vote otomatis dari skill Fitnah!'); });
         swapsDone.forEach(function (sw) { addSystem('🔄 Suara ' + sw.a + ' ↔ ' + sw.b + ' ditukar oleh skill Swapper!'); });
         if (elimId) {
             var e = byId(elimId);
@@ -10030,6 +10412,8 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             addSystem('💀 ' + e.name + ' tereliminasi — ternyata ' + (e.role === 'spy' ? 'SPY' : 'WARGA') + '.');
         } else if (saved) {
             addSystem('🛡️ ' + saved.name + ' mendapat suara terbanyak, tetapi dilindungi! Tidak ada yang tereliminasi.');
+        } else if (jPending) {
+            addSystem('⚖️ Voting seri! Keadilan akan memutuskan siapa yang tereliminasi…');
         } else {
             addSystem(res.none ? '🤷 Tidak ada suara masuk — tidak ada yang tereliminasi.'
                 : '🤝 Suara seri — tidak ada yang tereliminasi.');
@@ -10037,12 +10421,47 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         res.willEnd = !!checkWinner();
         H.result = res;
         H.phase = 'result';
+        setTimer(jPending ? JUSTICE_SEC : RESULT_SEC, jPending ? justiceTimeout : afterResult);
+        broadcastState();
+    }
+
+    // ---- Keadilan: memutuskan hasil voting seri ----
+    function justicePending() { return !!(H.phase === 'result' && H.result && H.result.justice && H.result.justice.pending); }
+    function justiceTimeout() { if (justicePending()) applyJustice(null, true); }
+    function decideJustice(p, m) {
+        if (!justicePending() || !p.keadilan) return;                 // hanya Keadilan (hidup maupun sudah mati)
+        if (m.none === true) { applyJustice(null, false); return; }
+        var cand = H.result.justice.candidates.filter(function (c) { return c.id === m.target; })[0];
+        var t = cand && byId(cand.id);
+        if (!t || !t.alive) return;                                    // hanya salah satu yang seri (dan masih hidup)
+        applyJustice(t.id, false);
+    }
+    function applyJustice(id, timedOut) {
+        var res = H.result, jr = res.justice, info = H.justiceInfo || {};
+        jr.pending = false; jr.timedOut = !!timedOut;
+        H.justiceInfo = null;
+        var e = id ? byId(id) : null;
+        if (!e || !e.alive) {
+            jr.choice = null;
+            addSystem(timedOut ? '⚖️ Keadilan tidak memutuskan — tidak ada yang tereliminasi.' : '⚖️ Keadilan memutuskan: tidak ada yang tereliminasi.');
+        } else if (info.guardTarget === e.id) {
+            jr.choice = e.name;
+            res.saved = { id: e.id, name: e.name };
+            addSystem('⚖️ Keadilan memilih ' + e.name + ', tetapi 🛡️ dilindungi! Tidak ada yang tereliminasi.');
+        } else {
+            jr.choice = e.name;
+            e.alive = false;
+            res.eliminated = { id: e.id, name: e.name, role: e.role, word: e.word };
+            addSystem('⚖️ Keadilan memutuskan: 💀 ' + e.name + ' tereliminasi — ternyata ' + (e.role === 'spy' ? 'SPY' : 'WARGA') + '.');
+        }
+        res.willEnd = !!checkWinner();
         setTimer(RESULT_SEC, afterResult);
         broadcastState();
     }
 
     function afterResult() {
         if (H.phase !== 'result') return;
+        if (justicePending()) return;                                  // menunggu keputusan Keadilan
         clearTimer();
         var w = checkWinner();
         if (w) { endGame(w); return; }
@@ -10066,6 +10485,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         } else {
             p.alive = false; p.left = true; p.connected = false; p.conn = null;
             addSystem((kicked ? '🚫 ' : '🚪 ') + p.name + (kicked ? ' dikeluarkan oleh host.' : ' meninggalkan permainan.'));
+            if (p.keadilan && justicePending()) applyJustice(null, true);
             if (H.phase !== 'end' && H.phase !== 'result') {
                 var w = checkWinner();
                 if (w) { endGame(w); closeLater(conn, kicked); return; }
@@ -10088,11 +10508,21 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         H.players.forEach(function (p) {
             p.alive = true; p.ready = false; p.vote = null; p.role = null; p.word = null; p.left = false;
             p.guardian = false; p.guardUsed = false;
+            p.polisi = false; p.polisiUsed = false; p.polisiRound = 0; p.polisiTarget = null; p.detainUntil = 0;
+            p.hacker = false; p.hackUses = 0; p.hackRound = 0; p.hackTarget = null; p.hackedRound = 0;
+            p.fitnah = false; p.fitnahUses = 0; p.fitnahRound = 0; p.fitnahTarget = null;
+            p.pengacau = false; p.pengacauUses = 0; p.pengacauRound = 0; p.pengacauTarget = null;
+            p.keadilan = false;
+            p.pembungkam = false; p.muteUses = 0; p.muteRound = 0; p.muteTarget = null; p.mutedRound = 0;
+            p.changer = false; p.changerUsed = false; p.swappedRole = null;
+            p.hantu = false;
+            p.penipu = false; p.penipuUses = 0; p.penipuRound = 0; p.penipuTarget = null;
             p.gluttony = false; p.gluttonyUses = 0; p.gluttonyRound = 0; p.gluttonyTarget = null; p.eaten = false;
             p.swapper = false; p.swapperSpy = false; p.swapUses = 0; p.swapRound = 0;
             p.mayor = false; p.mayorSpy = false; p.bank = 0; p.voteW = 1;
+            p.pemburu = false; p.pemburuSpy = false; p.pemburuUsed = false; p.pemburuRound = 0; p.pemburuTarget = null;
         });
-        H.guard = null; H.swaps = [];
+        H.guard = null; H.swaps = []; H.fake = null;
         H.phase = 'lobby'; H.round = 0; H.result = null; H.winner = null; H.pair = null;
         clearChatAll();
         broadcastState();
@@ -10268,34 +10698,54 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function roleLabel(r) { return r === 'spy' ? '🕵️ SPY' : '🧑 WARGA'; }
 
     function specialLabel(p) {          // label peran untuk layar hasil akhir
-        if (p.role === 'spy') return p.gluttony ? '🍖 GLUTTONY' : (p.swapperSpy ? '🔄 SWAPPER SPY' : (p.mayorSpy ? '🎖️ MAYOR SPY' : roleLabel('spy')));
-        return p.guardian ? '🛡️ GUARDIAN' : (p.swapper ? '🔄 SWAPPER' : (p.mayor ? '🎖️ MAYOR' : roleLabel(p.role)));
+        if (p.role === 'spy') return p.pemburuSpy ? '🏹 PEMBURU SPY' : p.gluttony ? '🍖 GLUTTONY' : (p.hacker ? '💻 HACKER' : p.fitnah ? '📢 FITNAH' : p.pengacau ? '🌀 PENGACAU' : p.pembungkam ? '🤐 PEMBUNGKAM' : p.changer ? '🔀 CHANGER' : p.penipu ? '🎭 PENIPU' : p.swapperSpy ? '🔄 SWAPPER SPY' : (p.mayorSpy ? '🎖️ MAYOR SPY' : roleLabel('spy')));
+        return p.pemburu ? '🏹 PEMBURU' : p.guardian ? '🛡️ GUARDIAN' : (p.polisi ? '👮 POLISI' : p.keadilan ? '⚖️ KEADILAN' : p.hantu ? '👻 HANTU' : p.swapper ? '🔄 SWAPPER' : (p.mayor ? '🎖️ MAYOR' : roleLabel(p.role)));
     }
     function identityHtml(st) {
         if (!st.me || !st.me.role) return '';
         var m = st.me, spy = m.role === 'spy';
-        var gl = spy && !!m.gluttony, sws = spy && !!m.swapperSpy, mys = spy && !!m.mayor;
-        var gd = !spy && !!m.guardian, sw = !spy && !!m.swapper, my = !spy && !!m.mayor;
+        var gl = spy && !!m.gluttony, hk = spy && !!m.hacker, hf = spy && !!m.fitnah, pc = spy && !!m.pengacau, pb = spy && !!m.pembungkam, ch = spy && !!m.changer, pn = spy && !!m.penipu, sws = spy && !!m.swapperSpy, mys = spy && !!m.mayor, pbs = spy && !!m.pemburu;
+        var gd = !spy && !!m.guardian, po = !spy && !!m.polisi, kd = !spy && !!m.keadilan, ht = !spy && !!m.hantu, sw = !spy && !!m.swapper, my = !spy && !!m.mayor, pbw = !spy && !!m.pemburu;
         var mayorInfo = '<br>🎖️ Saat <b>sesi voting</b> kamu bisa <b>menyimpan suara</b> (tidak memilih ronde itu; +1 masuk simpanan, tanpa batas). Suara tersimpan bisa dipakai nanti: target mendapat <b>+1 vote normal + seluruh suara tersimpan</b>.' +
             '<br>🎖️ Suara tersimpan sekarang: <b>' + (m.bank || 0) + '</b>';
+        var hunterInfo = '<br>🏹 Saat <b>sesi diskusi</b>, tekan tombol <b>🏹 Skill Pemburu</b> di pojok kanan bawah: pilih 1 pemain lalu <b>tebak perannya</b> (dari peran yang ada di permainan ini). Jika tebakan <b>benar</b>, pemain itu <b>tereliminasi</b>; jika <b>salah</b>, kamulah yang <b>tereliminasi</b>. ♾️ Tanpa batas selama kamu belum tereliminasi (maksimal <b>1×</b> per ronde).';
         var info;
         if (spy) {
-            info = '😈 Kamu <b>SPY</b>' + (gl ? ' (jenis <b>Gluttony</b>)' : (sws ? ' (jenis <b>Swapper Spy</b>)' : (mys ? ' (jenis <b>Mayor Spy</b>)' : ''))) +
+            info = '😈 Kamu <b>SPY</b>' + (gl ? ' (jenis <b>Gluttony</b>)' : (hk ? ' (jenis <b>Hacker</b>)' : hf ? ' (jenis <b>Fitnah</b>)' : pc ? ' (jenis <b>Pengacau</b>)' : pb ? ' (jenis <b>Pembungkam</b>)' : ch ? ' (jenis <b>Changer</b>)' : pn ? ' (jenis <b>Penipu</b>)' : sws ? ' (jenis <b>Swapper Spy</b>)' : (mys ? ' (jenis <b>Mayor Spy</b>)' : (pbs ? ' (jenis <b>Pemburu Spy</b>)' : '')))) +
                 '. Katamu <b>berbeda</b> dari warga. Dengarkan penjelasan mereka dan samarkan dirimu!' +
                 (gl ? '<br>🍖 Saat <b>sesi diskusi</b>, tekan tombol <b>🍖 Skill Gluttony</b> di pojok kanan bawah untuk memakan 1 pemain: dia tidak bisa skill, tidak bisa vote, dan hilang dari pilihan voting ronde itu. Bisa <b>2×</b> seumur permainan, maksimal 1× per ronde.' : '') +
+                (pn ? '<br>🎭 Saat <b>sesi diskusi</b>, tekan tombol <b>🎭 Skill Penipu</b> di pojok kanan bawah untuk meniru nama 1 pemain: di sesi voting ronde itu namamu diganti menjadi nama target dan tampil <b>acak tepat di atas atau di bawah</b> nama target (dua entri nama yang sama). Bisa <b>2×</b> seumur permainan, maksimal 1× per ronde, boleh disimpan.' : '') +
+                (ch ? (m.changerUsed
+                    ? '<br>🔀 Skill <b>Changer</b> sudah <b>habis</b> — pertukaran hanya sekali seumur permainan dan kamu tidak bisa menukar lagi.'
+                    : '<br>🔀 Saat <b>sesi diskusi</b>, tekan tombol <b>🔀 Skill Changer</b> di pojok kanan bawah untuk menukar peran dan kata dengan 1 pemain: kamu mengambil peran, kata, dan skill-nya; dia menjadi Spy (Changer) tanpa skill. Hanya <b>1×</b> seumur permainan — boleh disimpan dulu.') : '') +
+                (pb ? '<br>🤐 Saat <b>sesi diskusi</b>, tekan tombol <b>🤐 Skill Pembungkam</b> di pojok kanan bawah untuk membungkam 1 pemain: dia <b>tidak bisa vote</b> di voting ronde itu (skill lainnya tetap bisa dipakai). Bisa <b>2×</b> seumur permainan, maksimal 1× per ronde.' : '') +
+                (pc ? '<br>🌀 Saat <b>sesi diskusi</b>, tekan tombol <b>🌀 Skill Pengacau</b> di pojok kanan bawah untuk mengacau 1 pemain: vote yang dia kirim <b>tidak dihitung</b> di voting ronde itu. Bisa <b>2×</b> seumur permainan, maksimal 1× per ronde.' : '') +
+                (hf ? '<br>📢 Saat <b>sesi diskusi</b>, tekan tombol <b>📢 Skill Fitnah</b> di pojok kanan bawah untuk memfitnah 1 pemain: dia mendapat <b>+1 vote otomatis</b> di voting ronde itu. Bisa <b>2×</b> seumur permainan, maksimal 1× per ronde.' : '') +
+                (hk ? '<br>💻 Saat <b>sesi diskusi</b>, tekan tombol <b>💻 Skill Hacker</b> di pojok kanan bawah untuk meretas 1 pemain: seluruh skill-nya (termasuk skill sesi voting) dinonaktifkan ronde itu. Bisa <b>3×</b> seumur permainan, maksimal 1× per ronde.' : '') +
                 (sws ? '<br>🔄 Saat <b>sesi diskusi</b>, tekan tombol <b>🔄 Skill Swapper Spy</b> di pojok kanan bawah untuk memilih 2 pemain: seluruh suara keduanya ditukar di hasil voting ronde itu. Hanya <b>1×</b> seumur permainan.' : '') +
-                (mys ? mayorInfo : '');
+                (mys ? mayorInfo : '') +
+                (pbs ? hunterInfo : '');
         } else if (gd) {
             info = '🛡️ Kamu <b>GUARDIAN</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy! Saat <b>sesi diskusi</b>, tekan tombol <b>🛡️ Skill Guardian</b> di pojok kanan bawah untuk melindungi 1 pemain dari eliminasi voting ronde itu. ⚠️ Hanya <b>1×</b> seumur permainan.';
+        } else if (po) {
+            info = '👮 Kamu <b>POLISI</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy! Saat <b>sesi diskusi</b>, tekan tombol <b>👮 Skill Polisi</b> di pojok kanan bawah untuk menahan 1 pemain: dia <b>tidak bisa vote</b> dan <b>tidak bisa memakai skill</b> selama <b>2 ronde</b> (ronde ini + ronde berikutnya). ⚠️ Hanya <b>1×</b> seumur permainan.';
+        } else if (kd) {
+            info = '⚖️ Kamu <b>KEADILAN</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy! Jika hasil <b>voting seri</b>, kamulah yang <b>memutuskan siapa yang tereliminasi</b> (atau tidak ada) — pilihannya muncul otomatis di layar hasil voting. Kemampuan ini tetap berlaku <b>meski kamu sudah tereliminasi</b>.';
+        } else if (ht) {
+            info = '👻 Kamu <b>HANTU</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy! Jika kamu <b>tereliminasi</b>, kamu <b>tetap bisa memberi suara</b> di sesi voting berikutnya (kamu tidak hidup kembali dan tidak ikut diskusi).';
         } else if (sw) {
             info = '🔄 Kamu <b>SWAPPER</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy! Saat <b>sesi diskusi</b>, tekan tombol <b>🔄 Skill Swapper</b> di pojok kanan bawah untuk memilih 2 pemain: seluruh suara keduanya ditukar di hasil voting ronde itu. Bisa <b>2×</b> seumur permainan, maksimal 1× per ronde.';
+        } else if (pbw) {
+            info = '🏹 Kamu <b>PEMBURU</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy!' + hunterInfo;
         } else if (my) {
             info = '🎖️ Kamu <b>MAYOR</b> (Tim Warga). Katamu sama dengan warga lain — temukan Spy!' + mayorInfo;
         } else {
             info = '🧑 Kamu <b>WARGA</b>. Temukan pemain yang katanya berbeda darimu — dialah Spy!';
         }
-        var label = gl ? '🍖 GLUTTONY (SPY)' : (sws ? '🔄 SWAPPER SPY' : (mys ? '🎖️ MAYOR SPY' : (gd ? '🛡️ GUARDIAN' : (sw ? '🔄 SWAPPER' : (my ? '🎖️ MAYOR' : roleLabel(m.role))))));
-        return '<div class="role ' + (spy ? 'spy' : (gd ? 'guardian' : 'warga')) + '">' + label + '</div>' +
+        if (m.swapped === 'by') info += '<br>🔀 Kamu <b>menukar peran & kata</b> dengan pemain lain lewat skill Changer — kini kamu memegang peran dan katanya. Skill Changer sudah habis.';
+        else if (m.swapped === 'to') info += '<br>🔀 Peran & katamu <b>ditukar oleh skill Changer</b>! Kini kamu berada di <b>Tim Spy</b> dengan kata baru. Kamu tidak bisa menukar lagi.';
+        var label = pbs ? '🏹 PEMBURU SPY' : pbw ? '🏹 PEMBURU' : gl ? '🍖 GLUTTONY (SPY)' : (hk ? '💻 HACKER (SPY)' : hf ? '📢 FITNAH (SPY)' : pc ? '🌀 PENGACAU (SPY)' : pb ? '🤐 PEMBUNGKAM (SPY)' : ch ? '🔀 CHANGER (SPY)' : pn ? '🎭 PENIPU (SPY)' : sws ? '🔄 SWAPPER SPY' : (mys ? '🎖️ MAYOR SPY' : (gd ? '🛡️ GUARDIAN' : (po ? '👮 POLISI' : kd ? '⚖️ KEADILAN' : ht ? '👻 HANTU' : (sw ? '🔄 SWAPPER' : (my ? '🎖️ MAYOR' : roleLabel(m.role)))))));
+        return '<div class="role ' + (spy ? 'spy' : (gd ? 'guardian' : (po ? 'polisi' : kd ? 'dewi' : ht ? 'hantu' : 'warga'))) + '">' + label + '</div>' +
             '<div class="kata">' + esc(m.word) + '</div>' +
             '<div class="info" style="text-align:center">' + info + '</div>';
     }
@@ -10303,6 +10753,8 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function applyState(st) {
         var prev = S;
         S = st; myId = st.you; roomCode = st.code;
+        if (prev && prev.me && st.me && prev.phase !== 'lobby' && prev.phase !== 'role' && prev.phase !== 'end' && st.phase !== 'role' && st.phase !== 'end' &&
+            (prev.me.word !== st.me.word || prev.me.role !== st.me.role)) toast('🔀 Peran & katamu berubah! Buka 👁️ Kata & peranku untuk melihatnya.');
         localEnd = st.remaining > 0 ? Date.now() + st.remaining : 0;
         clearNotice();
         requestWake();
@@ -10346,15 +10798,27 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         var roleSt = st.settings.roles || {};
         var onNames = OPT_ROLES.filter(function (r) { return roleSt[r.key]; }).map(function (r) { return '<b>' + r.icon + ' ' + r.name + '</b>'; });
         $('olLobbyRoleInfo').innerHTML = '🎭 Dengan ' + n + ' pemain ada <b>' + spyCountFor(n) + ' Spy</b> (1 Spy untuk 3–6 pemain, 2 Spy untuk 7+), sisanya <b>Warga</b>' +
-            (onNames.length ? ', plus peran opsional aktif: ' + onNames.join(', ') + '.' : '. Tidak ada peran opsional yang aktif.');
-        $('olRoleOpts').innerHTML = OPT_ROLES.map(function (r) {
+            (onNames.length ? ', plus peran opsional aktif: ' + onNames.join(', ') + '.' : '. Tidak ada peran opsional yang aktif.') + ' Selalu ada minimal <b>1 Warga biasa</b> (tanpa peran khusus) di setiap permainan.';
+        function optRow(r) {
             var on = !!roleSt[r.key];
             return '<div class="ol-opt"><div class="t"><b>' + r.icon + ' ' + esc(r.name) + '</b><small>' + esc(r.desc) + '</small></div>' +
                 (host
                     ? '<button type="button" class="ol-switch' + (on ? ' on' : '') + '" data-ol="opt-role" data-key="' + esc(r.key) + '" data-on="' + (on ? '1' : '0') + '">' + (on ? '✅ AKTIF' : '⛔ MATI') + '</button>'
                     : '<span class="ol-opt-tag' + (on ? ' on' : '') + '">' + (on ? '✅ AKTIF' : '⛔ MATI') + '</span>') +
                 '</div>';
-        }).join('');
+        }
+        function optSection(team, title, cls) {
+            var list = OPT_ROLES.filter(function (r) { return optTeam(r.key) === team; });
+            var cnt = list.filter(function (r) { return !!roleSt[r.key]; }).length;
+            return '<div class="ol-fraksi ' + cls + '"><div class="ol-fraksi-h">' + title + ' <small>(' + cnt + '/' + list.length + ' aktif)</small></div>' +
+                (host
+                    ? '<div class="ol-fraksi-btns">' +
+                      '<button type="button" class="ol-btn-green" data-ol="opt-team" data-team="' + team + '" data-on="1">✅ Aktifkan semua peran ' + team + '</button>' +
+                      '<button type="button" class="ol-btn-sec" data-ol="opt-team" data-team="' + team + '" data-on="0">⛔ Nonaktifkan semua peran ' + team + '</button></div>'
+                    : '') +
+                list.map(optRow).join('') + '</div>';
+        }
+        $('olRoleOpts').innerHTML = optSection('warga', '🧑 Fraksi Warga', 'warga') + optSection('spy', '🕵️ Fraksi Spy', 'spy');
 
         var sd = $('olSelDisc'), sv = $('olSelVote');
         $('olSettingsHost').classList.toggle('hidden', !host);
@@ -10407,14 +10871,14 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     }
 
     function renderVote(st) {
-        var me = findMe(st), host = !!(me && me.host), alive = !!(me && me.alive), eatenMe = !!(st.me && st.me.eaten);
+        var me = findMe(st), host = !!(me && me.host), ghostMe = !!(me && !me.alive && st.me && st.me.hantu), alive = !!(me && me.alive) || ghostMe, eatenMe = !!(st.me && (st.me.eaten || st.me.detained || st.me.muted));     // dimakan Gluttony / ditahan Polisi / dibungkam: penyebab tidak ditampilkan
         $('olVoteTitle').textContent = '🗳️ Voting — Ronde ' + st.round;
         var html = '';
         if (!alive) {
             html = '<div class="info" style="text-align:center">💀 Kamu sudah tereliminasi. Kamu menonton voting ronde ini.</div>' +
                 '<div class="ol-sub">Sudah memilih: <b>' + st.voted.n + '/' + st.voted.of + '</b></div>';
         } else if (eatenMe) {
-            // Dimakan Gluttony: penyebab sengaja tidak ditampilkan
+            // Dimakan Gluttony / ditahan Polisi / dibungkam Pembungkam: penyebab sengaja tidak ditampilkan
             html = '<div class="info" style="text-align:center;background:#7f1d1d;border:1px solid #ef4444">❌ Kamu tidak dapat memberi suara ronde ini.</div>' +
                 '<div class="ol-sub">Sudah memilih: <b>' + st.voted.n + '/' + st.voted.of + '</b></div>';
         } else if (st.myVote === '@save') {
@@ -10430,11 +10894,12 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 return '<button type="button" class="ol-vote-btn' + (selectedTarget === p.id ? ' sel' : '') +
                     '" data-ol="pick" data-id="' + esc(p.id) + '">' + (selectedTarget === p.id ? '🎯 ' : '👤 ') + esc(p.name) + '</button>';
             }).join('');
-            var isMayor = !!(st.me && st.me.mayor), bank = (st.me && st.me.bank) || 0, useB = isMayor && bank > 0 && mayorUseBank;
+            var hackedMe = !!(st.me && st.me.hacked), isMayor = !!(st.me && st.me.mayor) && !hackedMe, bank = (st.me && st.me.bank) || 0, useB = isMayor && bank > 0 && mayorUseBank;
             if (isMayor) {
                 html = '<div class="info" style="text-align:center;font-size:13px">🎖️ Suara tersimpan: <b>' + bank + '</b>' +
                     (bank > 0 ? '<br>Pakai simpanan: target mendapat <b>+1 vote normal + ' + bank + ' tersimpan = ' + (1 + bank) + ' suara</b>.' : '') + '</div>' + html;
             }
+            if (hackedMe && st.me.mayor) html = '<div class="info" style="text-align:center;font-size:13px;background:#7f1d1d;border:1px solid #ef4444">❌ Skill tidak dapat digunakan</div>' + html;     // diretas: penyebab tidak ditampilkan
             if (isMayor && bank > 0) {
                 html += '<button type="button" class="ol-btn-sec" data-ol="mayor-toggle" style="' + (useB ? 'background:#b45309;color:#fff' : '') + '">' +
                     (useB ? '✅ Pakai suara tersimpan (' + (1 + bank) + ' suara)' : '☐ Pakai suara tersimpan (+' + bank + ')') + '</button>';
@@ -10446,6 +10911,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             }
             html += '<div class="ol-sub" style="margin-top:8px">Suara tidak bisa diubah setelah dikirim • ' + st.voted.n + '/' + st.voted.of + ' sudah memilih</div>';
         }
+        if (ghostMe) html = '<div class="info" style="text-align:center;background:#1e1b4b;border:1px solid #818cf8">👻 Kamu <b>Hantu</b> — meski sudah tereliminasi, kamu masih bisa memberi suara.</div>' + html;
         $('olVoteBody').innerHTML = html;
         $('olBtnSkipVote').classList.toggle('hidden', !host);
     }
@@ -10458,12 +10924,25 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         (r.swaps || []).forEach(function (sw) {
             html += '<div class="ol-banner tie" style="background:#312e81;border:1px solid #8b5cf6">🔄 Suara <b>' + esc(sw.a) + '</b> ↔ <b>' + esc(sw.b) + '</b> telah <b>ditukar</b> oleh Swapper!</div>';
         });
-        if (r.eliminated) {
+        var jr = r.justice, iAmJ = !!(st.me && st.me.keadilan);
+        if (jr && jr.pending) {
+            html += '<div class="ol-banner tie" style="background:#78350f;border:1px solid #fbbf24">⚖️ <b>Voting seri!</b><br>' +
+                (iAmJ ? 'Kamu <b>Keadilan</b> — putuskan siapa yang tereliminasi:' : 'Keadilan sedang memutuskan siapa yang tereliminasi…') + '</div>';
+            if (iAmJ) {
+                html += jr.candidates.map(function (c) {
+                    return '<button type="button" class="ol-btn-green" data-ol="justice" data-id="' + esc(c.id) + '">⚖️ Eliminasi ' + esc(c.name) + '</button>';
+                }).join('');
+                html += '<button type="button" class="ol-btn-sec" data-ol="justice-none">Tidak ada yang tereliminasi</button>';
+            }
+        } else if (r.eliminated) {
             var spy = r.eliminated.role === 'spy';
+            if (jr) html += '<div class="ol-sub" style="text-align:center;margin-bottom:6px">⚖️ Voting seri — diputuskan oleh Keadilan</div>';
             html += '<div class="ol-banner elim">💀 <b>' + esc(r.eliminated.name) + '</b> tereliminasi!<br>Ternyata dia adalah <b class="' +
                 (spy ? 'spy' : 'warga') + '" style="font-size:19px">' + roleLabel(r.eliminated.role) + '</b></div>';
         } else if (r.saved) {
-            html += '<div class="ol-banner tie">🛡️ <b>' + esc(r.saved.name) + '</b> mendapat suara terbanyak, tetapi <b>dilindungi Guardian</b>!<br>Tidak ada yang tereliminasi.</div>';
+            html += '<div class="ol-banner tie">🛡️ <b>' + esc(r.saved.name) + '</b> ' + (jr ? 'dipilih Keadilan' : 'mendapat suara terbanyak') + ', tetapi <b>dilindungi Guardian</b>!<br>Tidak ada yang tereliminasi.</div>';
+        } else if (jr) {
+            html += '<div class="ol-banner tie">⚖️ Voting seri!<br>' + (jr.timedOut ? 'Keadilan tidak memutuskan — tidak ada yang tereliminasi.' : 'Keadilan memutuskan: tidak ada yang tereliminasi.') + '</div>';
         } else {
             html += '<div class="ol-banner tie">' + (r.none ? '🤷 Tidak ada suara masuk.' : '🤝 Suara seri!') +
                 '<br>Tidak ada yang tereliminasi.</div>';
@@ -10471,15 +10950,15 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         var max = r.tally.length ? r.tally[0].n : 1;
         html += r.tally.map(function (row) {
             return '<div class="ol-bar-row"><div class="ol-bar-top"><b>' + esc(row.name) + '</b><span>' + row.n + ' suara</span></div>' +
-                '<div class="ol-bar"><i style="width:' + Math.round(row.n / max * 100) + '%"></i></div>' +
-                '<small>dipilih oleh: ' + row.by.map(esc).join(', ') + '</small></div>';
+                '<div class="ol-bar"><i style="width:' + Math.round(row.n / max * 100) + '%"></i></div></div>';
         }).join('');
         if (r.noVote && r.noVote.length) html += '<div class="ol-sub">Tidak memilih: ' + r.noVote.map(esc).join(', ') + '</div>';
-        html += '<div class="info" style="text-align:center">' + (r.willEnd
+        html += '<div class="info" style="text-align:center">' + ((jr && jr.pending)
+            ? '⏳ Batas waktu keputusan Keadilan: <b data-ol-timer>--:--</b>' : r.willEnd
             ? '🏁 Permainan berakhir — hasil akhir tampil dalam <b data-ol-timer>--:--</b>'
             : '⏭️ Ronde berikutnya dimulai dalam <b data-ol-timer>--:--</b>') + '</div>';
         $('olResBody').innerHTML = html;
-        $('olBtnSkipRes').classList.toggle('hidden', !host);
+        $('olBtnSkipRes').classList.toggle('hidden', !host || !!(jr && jr.pending));
     }
 
     function renderEnd(st) {
@@ -10497,7 +10976,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         html += (st.reveal || []).map(function (p) {
             var status = p.left ? '🚪 keluar' : (p.alive ? '✅ selamat' : '💀 tereliminasi');
             return '<div class="ol-reveal-row"><span class="n"><b>' + esc(p.name) + '</b>' + (p.id === st.you ? ' <small>(kamu)</small>' : '') +
-                '<br><small>' + status + '</small></span><span class="' + (p.role === 'spy' ? 'spy' : (p.guardian ? 'guardian' : 'warga')) + '" style="font-weight:800">' +
+                '<br><small>' + status + '</small></span><span class="' + (p.role === 'spy' ? 'spy' : (p.guardian ? 'guardian' : (p.polisi ? 'polisi' : p.keadilan ? 'dewi' : p.hantu ? 'hantu' : 'warga'))) + '" style="font-weight:800">' +
                 specialLabel(p) + '</span><span class="w">' + esc(p.word) + '</span></div>';
         }).join('');
         $('olEndBody').innerHTML = html;
@@ -10519,31 +10998,57 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             return '<button type="button" class="ol-vote-btn' + (on ? ' sel' : '') + '" data-ol="skill-pick" data-id="' + esc(p.id) + '">' +
                 (on ? cfg.mark : '👤 ') + esc(p.name) + (p.id === S.you ? ' <small>(kamu)</small>' : '') + '</button>';
         }).join('');
-        var b = $('olSkillConfirm'), ready = skillTargets.length === need;
+        if (cfg.guess) {                                       // Pemburu: setelah memilih target, pilih tebakan perannya
+            var opts = (S.skill && S.skill.options) || [];
+            if (skillGuess && !opts.some(function (o) { return o.key === skillGuess; })) skillGuess = null;
+            if (skillTargets.length === 1) {
+                var tgt = list.filter(function (p) { return p.id === skillTargets[0]; })[0];
+                $('olSkillList').innerHTML += '<div class="ol-sub" style="margin:12px 0 6px;text-align:center">🎯 Tebak peran <b>' + esc(tgt ? tgt.name : '?') + '</b>:</div>' +
+                    opts.map(function (o) {
+                        var on = skillGuess === o.key;
+                        return '<button type="button" class="ol-vote-btn' + (on ? ' sel' : '') + '" data-ol="skill-guess" data-key="' + esc(o.key) + '">' + (on ? '🎯 ' : '') + esc(o.label) + '</button>';
+                    }).join('');
+            } else skillGuess = null;
+        }
+        var b = $('olSkillConfirm'), ready = skillTargets.length === need && (!cfg.guess || !!skillGuess);
         b.disabled = !ready;
-        b.textContent = ready ? cfg.confirm : (need > 1 ? 'Pilih ' + need + ' pemain (' + skillTargets.length + '/' + need + ')' : 'Pilih satu pemain dulu');
+        b.textContent = ready ? cfg.confirm : (cfg.guess ? (skillTargets.length ? 'Pilih tebakan peran dulu' : 'Pilih satu pemain dulu')
+            : (need > 1 ? 'Pilih ' + need + ' pemain (' + skillTargets.length + '/' + need + ')' : 'Pilih satu pemain dulu'));
     }
     function pickSkillTarget(id) {
         var i = skillTargets.indexOf(id), need = skillNeed();
         if (i >= 0) skillTargets.splice(i, 1);
         else { skillTargets.push(id); while (skillTargets.length > need) skillTargets.shift(); }
+        skillGuess = null;                                     // ganti target -> tebakan dipilih ulang
         renderSkill();
     }
+    function pickSkillGuess(key) { skillGuess = (skillGuess === key) ? null : key; renderSkill(); }
     function confirmSkill() {
         if (!skillTargets.length || skillTargets.length !== skillNeed()) return;
         var t = skillTargets.slice();
+        var cfg = S && S.skill && SKILLS[S.skill.key];
+        if (cfg && cfg.guess) {                                // Pemburu: konfirmasi dulu, tebakan salah = dirinya tereliminasi
+            if (!skillGuess) return;
+            var opt = ((S.skill.options) || []).filter(function (o) { return o.key === skillGuess; })[0];
+            var tp = S.players.filter(function (p) { return p.id === t[0]; })[0];
+            if (!window.confirm('Tebak ' + (tp ? tp.name : '?') + ' sebagai ' + (opt ? opt.label : '?') + '?\n\nJika tebakanmu salah, KAMU yang tereliminasi.')) return;
+            var g = skillGuess;
+            closeSkill();
+            act({ t: 'skill', target: t[0], guess: g });
+            return;
+        }
         closeSkill();
         act(t.length > 1 ? { t: 'skill', a: t[0], b: t[1] } : { t: 'skill', target: t[0] });
     }
     function openSkill() {
-        if (!S || !S.skill || S.skill.usedNow || S.skill.left <= 0 || S.phase !== 'discussion') return;
+        if (!S || !S.skill || S.skill.usedNow || S.skill.blocked || S.skill.left <= 0 || S.phase !== 'discussion') return;
         var me = findMe(S);
         if (!me || !me.alive || (S.me && S.me.eaten)) return;
         skillTargets = [];
         renderSkill();
         $('olSkill').classList.remove('hidden');
     }
-    function closeSkill() { skillTargets = []; $('olSkill').classList.add('hidden'); }
+    function closeSkill() { skillTargets = []; skillGuess = null; $('olSkill').classList.add('hidden'); }
     function updateSkillUi(st) {
         var me = findMe(st), sk = st.skill, cfg = sk && SKILLS[sk.key];
         var eaten = !!(st.me && st.me.eaten);
@@ -10553,10 +11058,14 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         var fab = $('olSkillFab');
         fab.classList.toggle('hidden', !show);
         fab.classList.toggle('spy', !!(show && cfg.spy));
+        fab.classList.toggle('polisi', !!(show && sk.key === 'polisi'));
         $('olDiscuss').classList.toggle('ol-has-fab', show);
-        if (!show || sk.usedNow) closeSkill();
+        if (!show || sk.usedNow || sk.blocked) closeSkill();
         if (!show) return;
-        if (sk.usedNow) {
+        if (sk.blocked) {                       // ditahan Polisi: skill dinonaktifkan, penyebab tidak ditampilkan
+            fab.disabled = true;
+            fab.textContent = '❌ Skill tidak dapat digunakan';
+        } else if (sk.usedNow) {
             var nm = function (id) { var t = st.players.filter(function (p) { return p.id === id; })[0]; return t ? t.name : '?'; };
             fab.disabled = true;
             fab.textContent = cfg.icon + ' ' + cfg.doing + nm(sk.target) + (sk.target2 ? ' ↔ ' + nm(sk.target2) : '');
@@ -10643,6 +11152,8 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             case 'start': act({ t: 'start' }); break;
             case 'toggle-role': roleRevealed = !roleRevealed; if (S) renderRole(S); break;
             case 'ready': act({ t: 'ready' }); break;
+            case 'justice': act({ t: 'justice', target: el.getAttribute('data-id') }); break;
+            case 'justice-none': act({ t: 'justice', none: true }); break;
             case 'skip': act({ t: 'skip' }); break;
             case 'send': sendChat(); break;
             case 'pick': selectedTarget = el.getAttribute('data-id'); if (S) renderVote(S); break;
@@ -10653,12 +11164,14 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             case 'mayor-save': act({ t: 'vote', save: true }); break;
             case 'peek': openPeek(); break;
             case 'peek-close': closePeek(); break;
+            case 'opt-team': act({ t: 'settings', team: el.getAttribute('data-team'), on: el.getAttribute('data-on') === '1' }); break;
             case 'opt-role':
                 act({ t: 'settings', role: el.getAttribute('data-key'), on: el.getAttribute('data-on') !== '1' });
                 break;
             case 'skill-open': openSkill(); break;
             case 'skill-close': closeSkill(); break;
             case 'skill-pick': pickSkillTarget(el.getAttribute('data-id')); break;
+            case 'skill-guess': pickSkillGuess(el.getAttribute('data-key')); break;
             case 'skill-confirm': confirmSkill(); break;
             case 'again': act({ t: 'lobby' }); break;
             case 'reconnect': reconnectNow(); break;
