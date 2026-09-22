@@ -674,6 +674,10 @@
 .ol-row > button { margin-top:0; font-size:15px; padding:12px 8px; }
 .ol-btn-sec { background:#475569; }
 .ol-btn-sec:hover { background:#64748b; }
+#olMicBtn { flex:1; }
+#olMicBtn.mic-on { background:linear-gradient(135deg,#16a34a,#22c55e); box-shadow:0 0 0 2px #86efac inset; }
+#olMicBtn.mic-on:hover { background:linear-gradient(135deg,#15803d,#16a34a); }
+#olMicBtn:disabled { opacity:.55; }
 .ol-btn-green { background:#10b981; }
 .ol-btn-green:hover { background:#059669; }
 .ol-btn-purple { background:#7c3aed; }
@@ -1137,6 +1141,7 @@
             <div id="olDiscBar"></div>
             <div class="ol-row" style="margin-bottom:8px">
                 <button type="button" class="ol-btn-purple" data-ol="peek">👁️ Lihat kata &amp; peranku</button>
+                <button type="button" class="ol-btn-sec hidden" id="olMicBtn" data-ol="mic-toggle">🎙️ Aktifkan Mic</button>
             </div>
             <div id="olChat" class="ol-chat"></div>
             <div class="ol-chat-input">
@@ -9557,6 +9562,13 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     var wake = null, wakePending = false;
     var toastTimer = null;
     var SCREENS = ['olMenu', 'olLobby', 'olRoles', 'olRole', 'olDiscuss', 'olVote', 'olResult', 'olEnd'];
+    /* ---------- MIC / suara (WebRTC media call, mesh antar-pemain) ---------- */
+    var localStream = null;     // MediaStream mic milik sendiri (track dibiarkan ada, dinyala/matikan lewat .enabled)
+    var micOn = false;          // status mic sendiri saat ini (dikirim ke host)
+    var micRequested = false;   // sedang / sudah meminta izin mic (agar tidak minta berkali-kali)
+    var micFailed = false;      // izin mic ditolak / tidak didukung
+    var mediaCalls = {};        // peerId lawan -> objek MediaConnection PeerJS yang aktif
+    var remoteAudios = {};      // peerId lawan -> elemen <audio> tersembunyi buat memutar suaranya
 
     /* =====================================================
        PEERJS LOADER
@@ -9729,6 +9741,100 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         } else if (hostConn) {
             try { hostConn.send(msg); } catch (e) { toast('Koneksi ke host terputus'); }
         }
+    }
+
+    /* =====================================================
+       MIC / SUARA — panggilan media WebRTC (mesh) memakai PeerJS,
+       terpisah dari DataConnection ke host. Setiap pemain memanggil
+       langsung setiap pemain lain yang sudah diketahui peerId-nya
+       (dibagikan host lewat state), jadi suara mengalir peer-to-peer
+       tanpa melewati host. Tombol ON/OFF hanya mengatur track.enabled
+       (tanpa renegosiasi), jadi aman dipakai berkali-kali.
+       ===================================================== */
+    function bindMicHandler(p) {
+        p.on('call', function (call) {
+            try { call.answer(localStream || new MediaStream()); } catch (e) { }
+            attachRemoteAudio(call);
+        });
+    }
+    function attachRemoteAudio(call) {
+        var pid = call.peer;
+        if (mediaCalls[pid] && mediaCalls[pid] !== call) { try { mediaCalls[pid].close(); } catch (e) { } }
+        mediaCalls[pid] = call;
+        call.on('stream', function (remoteStream) {
+            var a = remoteAudios[pid];
+            if (!a) {
+                a = document.createElement('audio');
+                a.autoplay = true; a.playsInline = true; a.style.display = 'none';
+                document.body.appendChild(a);
+                remoteAudios[pid] = a;
+            }
+            a.srcObject = remoteStream;
+            a.play().catch(function () { });
+        });
+        call.on('close', function () { closeMediaCall(pid); });
+        call.on('error', function () { closeMediaCall(pid); });
+    }
+    function closeMediaCall(pid) {
+        if (mediaCalls[pid]) { try { mediaCalls[pid].close(); } catch (e) { } delete mediaCalls[pid]; }
+        var a = remoteAudios[pid];
+        if (a) { try { a.srcObject = null; a.remove(); } catch (e) { } delete remoteAudios[pid]; }
+    }
+    function stopAllMedia() {
+        Object.keys(mediaCalls).forEach(closeMediaCall);
+        if (localStream) { try { localStream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { } }
+        localStream = null; micOn = false; micRequested = false; micFailed = false;
+        updateMicBtn();
+    }
+    function ensureMicStream() {
+        if (localStream || micRequested) return;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micFailed = true; updateMicBtn(); return; }
+        micRequested = true;
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+            stream.getAudioTracks().forEach(function (t) { t.enabled = false; });   // default: mic mati sampai pemain menekan tombol ON
+            localStream = stream;
+            if (S) syncMeshCalls(S);
+            updateMicBtn();
+        }).catch(function () { micFailed = true; updateMicBtn(); });
+    }
+    function callPeer(pid) {
+        if (!peer || !pid || pid === peer.id || mediaCalls[pid]) return;
+        try {
+            var call = peer.call(pid, localStream || new MediaStream());
+            if (call) attachRemoteAudio(call);
+        } catch (e) { }
+    }
+    function syncMeshCalls(st) {
+        if (!peer) return;
+        st.players.forEach(function (p) {
+            if (p.id !== myId && p.connected && p.peerId) callPeer(p.peerId);
+        });
+    }
+    function pruneMediaCalls(st) {
+        var valid = {};
+        st.players.forEach(function (p) { if (p.connected && p.peerId && p.id !== myId) valid[p.peerId] = true; });
+        Object.keys(mediaCalls).forEach(function (pid) { if (!valid[pid]) closeMediaCall(pid); });
+    }
+    function toggleMic() {
+        if (!S || S.phase !== 'discussion') return;
+        var me = findMe(S); if (!me || !me.alive) return;
+        if (!localStream) { toast(micFailed ? '🚫 Mic tidak tersedia / izin ditolak.' : 'Menyiapkan mic…'); ensureMicStream(); return; }
+        micOn = !micOn;
+        localStream.getAudioTracks().forEach(function (t) { t.enabled = micOn; });
+        updateMicBtn();
+        act({ t: 'mic', on: micOn });
+    }
+    function updateMicBtn() {
+        var b = $('olMicBtn'); if (!b) return;
+        var show = !!(S && S.phase === 'discussion');
+        b.classList.toggle('hidden', !show);
+        if (!show) return;
+        var me = S && findMe(S), alive = !!(me && me.alive);
+        b.disabled = !alive || micFailed;
+        b.classList.toggle('mic-on', micOn);
+        b.textContent = micFailed ? '🚫 Mic tidak tersedia'
+            : !localStream ? '🎙️ Aktifkan Mic'
+            : micOn ? '🎙️ Mic AKTIF (ketuk utk bisukan)' : '🔇 Mic mati (ketuk utk aktifkan)';
     }
 
     /* =====================================================
@@ -9947,6 +10053,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         var code = randomCode(), p, opened = false;
         try { p = new window.Peer(ID_PREFIX + code, peerOptions()); }
         catch (e) { setBusy(false, 'WebRTC tidak didukung di browser ini.', true); return; }
+        bindMicHandler(p);
         p.on('open', function () {
             if (sid !== sessionId) { try { p.destroy(); } catch (e) { } return; }
             opened = true; peer = p;
@@ -9981,7 +10088,8 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         H = newHost();
         var me = {
             id: nextId(), token: TOKEN, name: cleanName(name), conn: null, connected: true,
-            isHost: true, alive: true, role: null, word: null, ready: false, vote: null, left: false
+            isHost: true, alive: true, role: null, word: null, ready: false, vote: null, left: false,
+            peerId: peer ? peer.id : (ID_PREFIX + code), micOn: false
         };
         H.players.push(me);
         myId = me.id; myName = me.name;
@@ -10023,7 +10131,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 var old = existing.conn; existing.conn = null;
                 try { old.close(); } catch (e) { }
             }
-            existing.conn = conn; existing.connected = true;
+            existing.conn = conn; existing.connected = true; existing.peerId = conn.peer; existing.micOn = false;
             if (H.phase !== 'lobby') addSystem('🔌 ' + existing.name + ' tersambung kembali.');
             broadcastState();
             H.chatLog.forEach(function (cm) { safeSend(conn, { t: 'chat', m: cm }); });
@@ -10034,7 +10142,8 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
 
         var p = {
             id: nextId(), token: tok, name: uniqueName(name), conn: conn, connected: true,
-            isHost: false, alive: true, role: null, word: null, ready: false, vote: null, left: false
+            isHost: false, alive: true, role: null, word: null, ready: false, vote: null, left: false,
+            peerId: conn.peer, micOn: false
         };
         H.players.push(p);
         broadcastState();
@@ -10043,7 +10152,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function onConnClosed(conn) {
         var p = H.players.filter(function (x) { return x.conn === conn; })[0];
         if (!p) return;
-        p.conn = null; p.connected = false;
+        p.conn = null; p.connected = false; p.micOn = false;
         if (H.phase === 'lobby') {
             H.players = H.players.filter(function (x) { return x !== p; });
         } else {
@@ -10102,7 +10211,9 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 return {
                     id: q.id, name: q.name, host: q.isHost, alive: q.alive,
                     connected: q.connected, left: q.left, ready: q.ready, voted: q.vote != null,
-                    eaten: ph === 'voting' && !!q.eaten     // hilang dari pilihan voting (penyebab tidak ditampilkan)
+                    eaten: ph === 'voting' && !!q.eaten,    // hilang dari pilihan voting (penyebab tidak ditampilkan)
+                    peerId: q.connected ? (q.peerId || null) : null,   // dipakai utk sambungan suara (WebRTC call) antar-pemain
+                    mic: ph === 'discussion' && !!q.micOn
                 };
             }),
             remaining: H.endsAt ? Math.max(0, H.endsAt - Date.now()) : 0,
@@ -10301,6 +10412,12 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 } else break;
                 broadcastState();
                 break;
+            case 'mic':
+                if (H.phase === 'discussion' && p.alive && typeof m.on === 'boolean' && p.micOn !== m.on) {
+                    p.micOn = m.on;
+                    broadcastState();
+                }
+                break;
             case 'bye': removePlayer(p); break;
             case 'settings':
                 if (!p.isHost || H.phase !== 'lobby') break;
@@ -10434,7 +10551,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         if (H.phase !== 'discussion' || revengePending()) return;
         clearTimer();
         H.phase = 'voting';
-        H.players.forEach(function (p) { p.vote = null; p.voteW = 1; });
+        H.players.forEach(function (p) { p.vote = null; p.voteW = 1; p.micOn = false; });     // mic wajib mati saat voting (cegah bisik-bisik)
         // Penipu: peniruan nama berlaku bila Penipu masih bisa memakai skill dan target masih ada di daftar voting.
         // Selain itu pemakaian dikembalikan (tanpa pengumuman).
         H.fake = null;
@@ -10777,6 +10894,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         var p, joined = false;
         try { p = new window.Peer(undefined, peerOptions()); }
         catch (e) { failJoin(sid, 'WebRTC tidak didukung di browser ini.'); return; }
+        bindMicHandler(p);
         peer = p; roomCode = code; myName = name;
         var timeout = setTimeout(function () {
             if (sid === sessionId && !joined) failJoin(sid, 'Room tidak merespons. Pastikan host masih online dan kodenya benar.' + (HAS_TURN ? '' : ' Jika kalian beda WiFi/jaringan, koneksi butuh server TURN (lihat blok pengaturan di file).'));
@@ -10878,6 +10996,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     }
     function teardown(delay) {
         dropNetwork(delay || 0);
+        stopAllMedia();
         H = null; S = null; isHost = false; myId = null; roomCode = ''; localEnd = 0;
         roleRevealed = false; selectedTarget = null; mayorUseBank = false;
         clearChat(); closePeek(); clearNotice(); releaseWake();
@@ -10967,6 +11086,10 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function applyState(st) {
         var prev = S;
         S = st; myId = st.you; roomCode = st.code;
+        if (prev && prev.phase === 'discussion' && st.phase !== 'discussion' && micOn) {   // wajib mati saat keluar sesi diskusi
+            micOn = false;
+            if (localStream) localStream.getAudioTracks().forEach(function (t) { t.enabled = false; });
+        }
         if (prev && prev.me && st.me && prev.phase !== 'lobby' && prev.phase !== 'role' && prev.phase !== 'end' && st.phase !== 'role' && st.phase !== 'end' &&
             (prev.me.word !== st.me.word || prev.me.role !== st.me.role)) toast('🔀 Peran & katamu berubah! Buka 👁️ Kata & peranku untuk melihatnya.');
         localEnd = st.remaining > 0 ? Date.now() + st.remaining : 0;
@@ -10999,6 +11122,9 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         updateSkillUi(st);
         updateRevengeUi(st);
         updateTimers();
+        pruneMediaCalls(st);
+        if (st.phase === 'discussion') { ensureMicStream(); syncMeshCalls(st); }
+        updateMicBtn();
     }
 
     function roleInfoHtml(st) {
@@ -11092,7 +11218,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         return st.players.map(function (p) {
             var cls = 'ol-chip' + (!p.alive ? ' dead' : '');
             return '<span class="' + cls + '">' + esc(p.name) + (p.alive ? '' : (p.left ? ' 🚪' : ' 💀')) +
-                (p.alive && !p.connected ? ' ⚠️' : '') + '</span>';
+                (p.alive && !p.connected ? ' ⚠️' : '') + (p.alive && p.connected && p.mic ? ' 🎙️' : '') + '</span>';
         }).join('');
     }
 
@@ -11448,6 +11574,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             case 'mayor-save': act({ t: 'vote', save: true }); break;
             case 'peek': openPeek(); break;
             case 'peek-close': closePeek(); break;
+            case 'mic-toggle': toggleMic(); break;
             case 'opt-team': act({ t: 'settings', team: el.getAttribute('data-team'), on: el.getAttribute('data-on') === '1' }); break;
             case 'opt-role':
                 act({ t: 'settings', role: el.getAttribute('data-key'), on: el.getAttribute('data-on') !== '1' });
