@@ -711,6 +711,9 @@
 .ol-msg.me { align-self:flex-end; background:#1d4ed8; }
 .ol-msg.me b { color:#bfdbfe; }
 .ol-msg.sys { align-self:center; background:transparent; color:#94a3b8; font-size:13px; text-align:center; max-width:100%; padding:3px 6px; }
+.ol-msg.describe { border:1px solid #f59e0b; background:#422006; }
+.ol-msg.describe.me { background:#7c2d12; }
+.ol-msg.describe b { color:#fbbf24; }
 .ol-chat-input { display:flex; gap:8px; margin-top:8px; }
 .ol-chat-input input { flex:1; min-width:0; margin:0; }
 .ol-chat-input button { width:auto; margin:0; padding:0 18px; }
@@ -1082,8 +1085,7 @@
             <div class="section-title" style="margin-top:16px">👥 Pemain (<span id="olLobbyCount">0</span>/12)</div>
             <div id="olLobbyPlayers" class="ol-list"></div>
             <div id="olLobbyRoleInfo" class="info" style="font-size:13px"></div>
-            <div class="section-title" style="margin-top:14px">🎭 Peran Opsional</div>
-            <div id="olRoleOpts"></div>
+            <button type="button" class="ol-btn-purple" data-ol="open-roles" style="margin-top:10px">🎭 ATUR PERAN OPSIONAL</button>
             <div id="olSettingsHost" class="ol-settings hidden">
                 <div><label for="olSelDisc">🗣️ Durasi diskusi</label>
                     <select id="olSelDisc">
@@ -1104,6 +1106,16 @@
             <div id="olWaitHost" class="info hidden" style="text-align:center">⏳ Menunggu host memulai permainan…</div>
         </div>
 
+        <!-- PERAN OPSIONAL (menu terpisah, dibuka dari lobby) -->
+        <div id="olRoles" class="ol-screen hidden">
+            <div class="ol-head">
+                <h2>🎭 Peran Opsional</h2>
+            </div>
+            <div id="olRolesInfo" class="info" style="font-size:13px"></div>
+            <div id="olRoleOpts"></div>
+            <button type="button" class="ol-btn-sec" data-ol="back-lobby" style="margin-top:14px">⬅️ KEMBALI KE LOBBY</button>
+        </div>
+
         <!-- IDENTITAS (kata & peran) -->
         <div id="olRole" class="ol-screen hidden">
             <h1>🔐 IDENTITAS RAHASIA</h1>
@@ -1122,6 +1134,7 @@
             </div>
             <div class="ol-sub" style="text-align:left">Jelaskan katamu tanpa menyebutnya langsung. Cari siapa yang katanya berbeda!</div>
             <div id="olDiscChips" class="ol-chips"></div>
+            <div id="olDiscBar"></div>
             <div class="ol-row" style="margin-bottom:8px">
                 <button type="button" class="ol-btn-purple" data-ol="peek">👁️ Lihat kata &amp; peranku</button>
             </div>
@@ -9536,12 +9549,14 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     var roleRevealed = false;
     var selectedTarget = null;
     var mayorUseBank = false;   // Mayor: pakai suara tersimpan pada voting ini?
+    var showingRoleScreen = false;   // lobby: sedang membuka layar "Atur Peran Opsional"?
+    var roleDescExpanded = {};       // lobby: peran mana yang deskripsinya sedang dibuka (key -> bool)
     var skillTargets = [];      // pilihan sementara di popup skill (1 target, atau 2 untuk Swapper)
     var skillGuess = null;      // Pemburu: tebakan peran (kunci peran) di popup skill
     var chatSeen = {};
     var wake = null, wakePending = false;
     var toastTimer = null;
-    var SCREENS = ['olMenu', 'olLobby', 'olRole', 'olDiscuss', 'olVote', 'olResult', 'olEnd'];
+    var SCREENS = ['olMenu', 'olLobby', 'olRoles', 'olRole', 'olDiscuss', 'olVote', 'olResult', 'olEnd'];
 
     /* =====================================================
        PEERJS LOADER
@@ -9684,9 +9699,9 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             d.textContent = String(m.text || '');
         } else {
             var mine = m.from === myId;
-            d.className = 'ol-msg' + (mine ? ' me' : '');
+            d.className = 'ol-msg' + (mine ? ' me' : '') + (m.describe ? ' describe' : '');
             var b = document.createElement('b');
-            b.textContent = mine ? 'Kamu' : String(m.name || '?');
+            b.textContent = (mine ? 'Kamu' : String(m.name || '?')) + (m.describe ? ' 🎙️' : '');
             var t = document.createElement('span');
             t.textContent = String(m.text || '');
             d.appendChild(b); d.appendChild(t);
@@ -9726,6 +9741,9 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             timer: null, endsAt: 0, pair: null, result: null, winner: null, chatSeq: 0, chatLog: [],
             guard: null,                // { target, round, by } — perlindungan Guardian ronde ini
             revenge: null,              // { by, byName, pending, from, choice, ... } — pembalasan Revenger yang sedang/ baru berlangsung
+            describeOrder: [],          // urutan giliran deskripsi kata wajib di awal diskusi (id pemain, tetap/tidak berubah)
+            describeDone: [],           // id pemain yang sudah mengirim deskripsinya
+            describeSkipped: [],        // id pemain yang giliran deskripsinya dilewati (terputus / dikeluarkan / tereliminasi)
             roleList: [],               // kunci peran yang ada di permainan ini (pilihan tebakan Pemburu)
             swaps: [],                  // [{ by, a, b }] — tukar suara (Swapper) yang menunggu hasil voting ronde ini
             optRoles: optDefaults()     // status aktif/nonaktif peran opsional
@@ -9803,6 +9821,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         var loser = right ? target : hunter;
         dropRoundEffects(loser);                                                       // skill yang sedang dipakai yang tereliminasi ronde ini dibatalkan
         loser.alive = false;
+        skipDescribeFor(loser.id);
         var team = loser.role === 'spy' ? 'SPY' : 'WARGA';
         if (right) addSystem('🏹 Seorang Pemburu menebak peran ' + target.name + ' dengan benar! 💀 ' + target.name + ' tereliminasi — ternyata ' + team + '.');
         else addSystem('🏹 ' + hunter.name + ' memakai skill Pemburu, tetapi tebakannya salah! 💀 ' + hunter.name + ' tereliminasi — ternyata ' + team + '.');
@@ -9845,7 +9864,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         var t = id ? byId(id) : null;
         if (t && t.alive) {
             rv.choice = t.name; rv.choiceRole = t.role;
-            if (rv.from === 'discussion') dropRoundEffects(t);
+            if (rv.from === 'discussion') { dropRoundEffects(t); skipDescribeFor(t.id); }
             t.alive = false;
             addSystem('🔪 Revenger ' + rv.byName + ' membawa ' + t.name + ' ikut tereliminasi — ternyata ' + (t.role === 'spy' ? 'SPY' : 'WARGA') + '.');
         } else {
@@ -9865,6 +9884,40 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     function hostPlayer() { return H && H.players.filter(function (p) { return p.isHost; })[0]; }
     function byId(id) { return H.players.filter(function (p) { return p.id === id; })[0]; }
     function nameOf(id) { var p = byId(id); return p ? p.name : '?'; }
+    // Sesi deskripsi wajib di awal diskusi: setiap pemain hidup mendapat giliran (urutan acak) untuk mengirim
+    // 1 pesan mendeskripsikan katanya sebelum chat bebas dibuka untuk semua orang.
+    function describeResolvedSet() {
+        var m = {};
+        (H.describeDone || []).forEach(function (id) { m[id] = true; });
+        (H.describeSkipped || []).forEach(function (id) { m[id] = true; });
+        return m;
+    }
+    function describeQueue() {
+        var resolved = describeResolvedSet();
+        return (H.describeOrder || []).filter(function (id) { return !resolved[id]; });
+    }
+    function describePending() { return describeQueue().length > 0; }
+    function currentDescriber() { var q = describeQueue(); return q.length ? byId(q[0]) : null; }
+    function advanceDescribe(doneId) {
+        H.describeDone.push(doneId);
+        if (describePending()) {
+            addSystem('🗣️ Giliran ' + currentDescriber().name + ' mendeskripsikan katanya…');
+        } else {
+            addSystem('✅ Semua pemain sudah mendeskripsikan katanya! Chat bebas dibuka.');
+        }
+    }
+    // Lewati giliran deskripsi seseorang (terputus / dikeluarkan / tereliminasi saat masih menunggu giliran) agar sesi tidak macet.
+    function skipDescribeFor(id) {
+        if (!H.describeOrder || H.describeOrder.indexOf(id) < 0) return;
+        var resolved = describeResolvedSet();
+        if (resolved[id]) return;
+        var wasCurrent = !!(currentDescriber() && currentDescriber().id === id);
+        H.describeSkipped.push(id);
+        if (wasCurrent) {
+            if (describePending()) addSystem('🗣️ Giliran ' + currentDescriber().name + ' mendeskripsikan katanya…');
+            else addSystem('✅ Semua pemain sudah mendeskripsikan katanya! Chat bebas dibuka.');
+        }
+    }
     function uniqueName(name, exceptId) {
         var base = name, n = 2;
         function taken(x) {
@@ -9997,6 +10050,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             addSystem('⚠️ ' + p.name + ' terputus. Menunggu tersambung kembali…');
             if (H.phase === 'role') { if (checkAllReady()) return; }
             if (H.phase === 'voting') { if (checkAllVoted()) return; }
+            if (H.phase === 'discussion') skipDescribeFor(p.id);     // lewati giliran deskripsinya agar sesi tidak macet
         }
         broadcastState();
     }
@@ -10057,6 +10111,23 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             myVote: p.vote,
             minPlayers: MIN_PLAYERS
         };
+        if (ph === 'discussion') {
+            var curId = describePending() ? currentDescriber().id : null;
+            st.describe = {
+                pending: describePending(),
+                order: (H.describeOrder || []).map(function (id) {
+                    var status = (H.describeDone || []).indexOf(id) >= 0 ? 'done' :
+                        (H.describeSkipped || []).indexOf(id) >= 0 ? 'skipped' :
+                        id === curId ? 'current' : 'pending';
+                    return { id: id, name: nameOf(id), status: status };
+                }),
+                doneCount: (H.describeDone || []).length + (H.describeSkipped || []).length,
+                total: (H.describeOrder || []).length,
+                currentId: curId,
+                currentName: curId ? nameOf(curId) : null,
+                iAm: !!curId && curId === p.id
+            };
+        }
         if (ph === 'voting' && H.fake && p.id !== H.fake.by) st.players = fakeList(st.players);
         if (ph !== 'lobby') st.me = { role: p.role, word: p.word, guardian: !!p.guardian, polisi: !!p.polisi, hacker: !!p.hacker, fitnah: !!p.fitnah, pengacau: !!p.pengacau, keadilan: !!p.keadilan, pembungkam: !!p.pembungkam, hantu: !!p.hantu, penipu: !!p.penipu, changer: !!p.changer, changerUsed: !!p.changerUsed, swapped: p.swappedRole || null, gluttony: !!p.gluttony, swapper: !!p.swapper, swapperSpy: !!p.swapperSpy,
             pemburu: !!(p.pemburu || p.pemburuSpy), revenger: !!p.revenger, boomerang: !!p.boomerang, boomerangUsed: !!p.boomerangUsed, hakim: !!p.hakim, hakimBonus: p.hakimBonus !== false, mayor: !!(p.mayor || p.mayorSpy), bank: (p.mayor || p.mayorSpy) ? (p.bank || 0) : 0, eaten: !!p.eaten, detained: isDetained(p), hacked: isHacked(p), muted: isMuted(p) };
@@ -10267,6 +10338,15 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         if (!text) return;
         var now = Date.now();
         if (now - (p._lastChat || 0) < 400) return;     // anti-spam
+        if (describePending()) {
+            var cur = currentDescriber();
+            if (!cur || p.id !== cur.id) return;          // bukan giliran pemain ini — chat bebas belum dibuka
+            p._lastChat = now;
+            postChat({ from: p.id, name: p.name, text: text, describe: true });
+            advanceDescribe(p.id);
+            broadcastState();
+            return;
+        }
         p._lastChat = now;
         postChat({ from: p.id, name: p.name, text: text });
     }
@@ -10342,7 +10422,10 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         H.phase = 'discussion';
         H.guard = null; H.swaps = []; H.fake = null;
         H.players.forEach(function (p) { p.vote = null; p.eaten = false; });     // efek Gluttony hanya berlaku 1 ronde
+        H.describeOrder = shuffle(H.players.filter(function (p) { return p.alive && p.connected; }).map(function (p) { return p.id; }));
+        H.describeDone = []; H.describeSkipped = [];
         addSystem('🗣️ Ronde ' + H.round + ' — diskusi dimulai. Jelaskan katamu tanpa menyebutnya!');
+        if (H.describeOrder.length) addSystem('🎙️ Sesi deskripsi wajib dimulai! Giliran ' + nameOf(H.describeOrder[0]) + ' mendeskripsikan katanya…');
         setTimer(H.discussSec, startVoting);
         broadcastState();
     }
@@ -10606,6 +10689,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         } else {
             p.alive = false; p.left = true; p.connected = false; p.conn = null;
             addSystem((kicked ? '🚫 ' : '🚪 ') + p.name + (kicked ? ' dikeluarkan oleh host.' : ' meninggalkan permainan.'));
+            if (H.phase === 'discussion') skipDescribeFor(p.id);
             if (p.keadilan && justicePending()) applyJustice(null, true);
             if (revengePending() && H.revenge.by === p.id) applyRevenge(null, true);
             if (H.phase !== 'end' && H.phase !== 'result') {
@@ -10899,8 +10983,12 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         $('olTopCode').textContent = st.code;
         $('olTopCount').textContent = alive.filter(function (p) { return p.connected; }).length + ' pemain';
 
+        if (st.phase !== 'lobby') showingRoleScreen = false;
         switch (st.phase) {
-            case 'lobby': showScreen('olLobby'); renderLobby(st); break;
+            case 'lobby':
+                renderLobby(st); renderRoles(st);
+                showScreen(showingRoleScreen ? 'olRoles' : 'olLobby');
+                break;
             case 'role': showScreen('olRole'); renderRole(st); break;
             case 'discussion': showScreen('olDiscuss'); renderDiscuss(st); break;
             case 'voting': showScreen('olVote'); renderVote(st); break;
@@ -10911,6 +10999,14 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         updateSkillUi(st);
         updateRevengeUi(st);
         updateTimers();
+    }
+
+    function roleInfoHtml(st) {
+        var n = st.players.length;
+        var roleSt = st.settings.roles || {};
+        var onNames = OPT_ROLES.filter(function (r) { return roleSt[r.key]; }).map(function (r) { return '<b>' + r.icon + ' ' + r.name + '</b>'; });
+        return '🎭 Dengan ' + n + ' pemain ada <b>' + spyCountFor(n) + ' Spy</b> (1 Spy untuk 3–6 pemain, 2 Spy untuk 7+), sisanya <b>Warga</b>' +
+            (onNames.length ? ', plus peran opsional aktif: ' + onNames.join(', ') + '.' : '. Tidak ada peran opsional yang aktif.') + ' Selalu ada minimal <b>1 Warga biasa</b> (tanpa peran khusus) di setiap permainan.';
     }
 
     function renderLobby(st) {
@@ -10925,31 +11021,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
                 '</div>';
         }).join('');
 
-        var n = st.players.length;
-        var roleSt = st.settings.roles || {};
-        var onNames = OPT_ROLES.filter(function (r) { return roleSt[r.key]; }).map(function (r) { return '<b>' + r.icon + ' ' + r.name + '</b>'; });
-        $('olLobbyRoleInfo').innerHTML = '🎭 Dengan ' + n + ' pemain ada <b>' + spyCountFor(n) + ' Spy</b> (1 Spy untuk 3–6 pemain, 2 Spy untuk 7+), sisanya <b>Warga</b>' +
-            (onNames.length ? ', plus peran opsional aktif: ' + onNames.join(', ') + '.' : '. Tidak ada peran opsional yang aktif.') + ' Selalu ada minimal <b>1 Warga biasa</b> (tanpa peran khusus) di setiap permainan.';
-        function optRow(r) {
-            var on = !!roleSt[r.key];
-            return '<div class="ol-opt"><div class="t"><b>' + r.icon + ' ' + esc(r.name) + '</b><small>' + esc(r.desc) + '</small></div>' +
-                (host
-                    ? '<button type="button" class="ol-switch' + (on ? ' on' : '') + '" data-ol="opt-role" data-key="' + esc(r.key) + '" data-on="' + (on ? '1' : '0') + '">' + (on ? '✅ AKTIF' : '⛔ MATI') + '</button>'
-                    : '<span class="ol-opt-tag' + (on ? ' on' : '') + '">' + (on ? '✅ AKTIF' : '⛔ MATI') + '</span>') +
-                '</div>';
-        }
-        function optSection(team, title, cls) {
-            var list = OPT_ROLES.filter(function (r) { return optTeam(r.key) === team; });
-            var cnt = list.filter(function (r) { return !!roleSt[r.key]; }).length;
-            return '<div class="ol-fraksi ' + cls + '"><div class="ol-fraksi-h">' + title + ' <small>(' + cnt + '/' + list.length + ' aktif)</small></div>' +
-                (host
-                    ? '<div class="ol-fraksi-btns">' +
-                      '<button type="button" class="ol-btn-green" data-ol="opt-team" data-team="' + team + '" data-on="1">✅ Aktifkan semua peran ' + team + '</button>' +
-                      '<button type="button" class="ol-btn-sec" data-ol="opt-team" data-team="' + team + '" data-on="0">⛔ Nonaktifkan semua peran ' + team + '</button></div>'
-                    : '') +
-                list.map(optRow).join('') + '</div>';
-        }
-        $('olRoleOpts').innerHTML = optSection('warga', '🧑 Fraksi Warga', 'warga') + optSection('spy', '🕵️ Fraksi Spy', 'spy');
+        $('olLobbyRoleInfo').innerHTML = roleInfoHtml(st);
 
         var sd = $('olSelDisc'), sv = $('olSelVote');
         $('olSettingsHost').classList.toggle('hidden', !host);
@@ -10969,6 +11041,39 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         btn.textContent = ok < st.minPlayers
             ? '⏳ MENUNGGU PEMAIN (' + ok + '/' + st.minPlayers + ' minimum)'
             : '▶️ MULAI PERMAINAN (' + ok + ' pemain)';
+    }
+
+    // Menu "Atur Peran Opsional": daftar peran ditampilkan ringkas (kolaps), deskripsi baru muncul saat barisnya diketuk,
+    // supaya layar tidak langsung penuh oleh ~20 peran dari atas ke bawah.
+    function renderRoles(st) {
+        var me = findMe(st), host = !!(me && me.host);
+        $('olRolesInfo').innerHTML = roleInfoHtml(st);
+        var roleSt = st.settings.roles || {};
+        function optRow(r) {
+            var on = !!roleSt[r.key];
+            var exp = !!roleDescExpanded[r.key];
+            return '<div class="ol-opt">' +
+                '<div class="t" data-ol="opt-desc" data-key="' + esc(r.key) + '" style="cursor:pointer">' +
+                '<b>' + (exp ? '▾' : '▸') + ' ' + r.icon + ' ' + esc(r.name) + '</b>' +
+                (exp ? '<small>' + esc(r.desc) + '</small>' : '') +
+                '</div>' +
+                (host
+                    ? '<button type="button" class="ol-switch' + (on ? ' on' : '') + '" data-ol="opt-role" data-key="' + esc(r.key) + '" data-on="' + (on ? '1' : '0') + '">' + (on ? '✅ AKTIF' : '⛔ MATI') + '</button>'
+                    : '<span class="ol-opt-tag' + (on ? ' on' : '') + '">' + (on ? '✅ AKTIF' : '⛔ MATI') + '</span>') +
+                '</div>';
+        }
+        function optSection(team, title, cls) {
+            var list = OPT_ROLES.filter(function (r) { return optTeam(r.key) === team; });
+            var cnt = list.filter(function (r) { return !!roleSt[r.key]; }).length;
+            return '<div class="ol-fraksi ' + cls + '"><div class="ol-fraksi-h">' + title + ' <small>(' + cnt + '/' + list.length + ' aktif)</small></div>' +
+                (host
+                    ? '<div class="ol-fraksi-btns">' +
+                      '<button type="button" class="ol-btn-green" data-ol="opt-team" data-team="' + team + '" data-on="1">✅ Aktifkan semua peran ' + team + '</button>' +
+                      '<button type="button" class="ol-btn-sec" data-ol="opt-team" data-team="' + team + '" data-on="0">⛔ Nonaktifkan semua peran ' + team + '</button></div>'
+                    : '') +
+                list.map(optRow).join('') + '</div>';
+        }
+        $('olRoleOpts').innerHTML = optSection('warga', '🧑 Fraksi Warga', 'warga') + optSection('spy', '🕵️ Fraksi Spy', 'spy');
     }
 
     function renderRole(st) {
@@ -10996,8 +11101,28 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         $('olDiscTitle').textContent = '🗣️ Ronde ' + st.round + ' — Diskusi';
         $('olDiscChips').innerHTML = chipsHtml(st);
         var inp = $('olChatInput'), snd = $('olChatSend');
-        inp.disabled = !alive; snd.disabled = !alive;
-        inp.placeholder = alive ? 'Tulis pesan…' : 'Kamu tereliminasi — hanya bisa membaca';
+        var d = st.describe;
+        var locked = alive && d && d.pending && !d.iAm;
+        var myTurn = alive && d && d.pending && d.iAm;
+        inp.disabled = !alive || locked;
+        snd.disabled = !alive || locked;
+        if (!alive) inp.placeholder = 'Kamu tereliminasi — hanya bisa membaca';
+        else if (myTurn) inp.placeholder = '🎙️ Giliranmu! Deskripsikan katamu (wajib, 1 pesan)…';
+        else if (locked) inp.placeholder = 'Menunggu giliran ' + (d.currentName || '…') + '…';
+        else inp.placeholder = 'Tulis pesan…';
+        var bar = '';
+        if (d && d.pending) {
+            bar = '<div class="info" style="text-align:center;background:#422006;border:1px solid #f59e0b;margin-bottom:8px">' +
+                (myTurn ? '🎙️ <b>Giliranmu!</b> Kirim 1 pesan mendeskripsikan katamu untuk membuka chat bebas.' :
+                    '🗣️ Giliran <b>' + esc(d.currentName || '…') + '</b> mendeskripsikan katanya…') +
+                '<div class="ol-sub" style="margin-top:4px">' + d.doneCount + '/' + d.total + ' sudah mendapat giliran</div>' +
+                '<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:6px">' +
+                (d.order || []).map(function (o) {
+                    var mark = o.status === 'done' ? '✅' : o.status === 'skipped' ? '⏭️' : o.status === 'current' ? '🎙️' : '⏳';
+                    return '<span class="ol-tag" style="opacity:' + (o.status === 'pending' ? '.6' : '1') + '">' + mark + ' ' + esc(o.name) + '</span>';
+                }).join('') + '</div></div>';
+        }
+        $('olDiscBar').innerHTML = bar;
         $('olBtnSkipDisc').classList.toggle('hidden', !host);
     }
 
@@ -11326,6 +11451,19 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
             case 'opt-team': act({ t: 'settings', team: el.getAttribute('data-team'), on: el.getAttribute('data-on') === '1' }); break;
             case 'opt-role':
                 act({ t: 'settings', role: el.getAttribute('data-key'), on: el.getAttribute('data-on') !== '1' });
+                break;
+            case 'open-roles':
+                showingRoleScreen = true;
+                if (S) { showScreen('olRoles'); renderRoles(S); }
+                break;
+            case 'back-lobby':
+                showingRoleScreen = false;
+                if (S) { showScreen('olLobby'); renderLobby(S); }
+                break;
+            case 'opt-desc':
+                var rk = el.getAttribute('data-key');
+                roleDescExpanded[rk] = !roleDescExpanded[rk];
+                if (S) renderRoles(S);
                 break;
             case 'skill-open': openSkill(); break;
             case 'revenge':
