@@ -9569,6 +9569,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     var micFailed = false;      // izin mic ditolak / tidak didukung
     var mediaCalls = {};        // peerId lawan -> objek MediaConnection PeerJS yang aktif
     var remoteAudios = {};      // peerId lawan -> elemen <audio> tersembunyi buat memutar suaranya
+    var pendingAnswerCalls = []; // panggilan masuk yang belum dijawab (menunggu localStream siap)
 
     /* =====================================================
        PEERJS LOADER
@@ -9753,9 +9754,24 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
        ===================================================== */
     function bindMicHandler(p) {
         p.on('call', function (call) {
-            try { call.answer(localStream || new MediaStream()); } catch (e) { }
-            attachRemoteAudio(call);
+            attachRemoteAudio(call); // pasang listener 'stream' dulu sebelum menjawab, agar tidak ada event yang terlewat
+            if (localStream || micFailed) {
+                try { call.answer(localStream || new MediaStream()); } catch (e) { }
+            } else {
+                // mic kita sendiri belum siap (masih menunggu izin) -> tunda jawaban
+                // supaya panggilan TIDAK terlanjur terbentuk tanpa audio track sama sekali
+                pendingAnswerCalls.push(call);
+                ensureMicStream();
+            }
         });
+    }
+    function flushPendingAnswers() {
+        if (!pendingAnswerCalls.length) return;
+        var stream = localStream || new MediaStream();
+        pendingAnswerCalls.forEach(function (call) {
+            try { call.answer(stream); } catch (e) { }
+        });
+        pendingAnswerCalls = [];
     }
     function attachRemoteAudio(call) {
         var pid = call.peer;
@@ -9788,14 +9804,20 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
     }
     function ensureMicStream() {
         if (localStream || micRequested) return;
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micFailed = true; updateMicBtn(); return; }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micFailed = true; flushPendingAnswers(); updateMicBtn(); return; }
         micRequested = true;
         navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
             stream.getAudioTracks().forEach(function (t) { t.enabled = false; });   // default: mic mati sampai pemain menekan tombol ON
             localStream = stream;
+            flushPendingAnswers();
             if (S) syncMeshCalls(S);
             updateMicBtn();
-        }).catch(function () { micFailed = true; updateMicBtn(); });
+        }).catch(function () {
+            micFailed = true;
+            flushPendingAnswers(); // tetap jawab (tanpa track suara) supaya kita masih bisa MENDENGAR pemain lain
+            if (S) syncMeshCalls(S); // tetap coba sambungkan biar bisa mendengar walau kita tak bisa mengirim suara
+            updateMicBtn();
+        });
     }
     function callPeer(pid) {
         if (!peer || !pid || pid === peer.id || mediaCalls[pid]) return;
@@ -11123,7 +11145,7 @@ window.WTS_ONLINE_CONFIG = window.WTS_ONLINE_CONFIG || {
         updateRevengeUi(st);
         updateTimers();
         pruneMediaCalls(st);
-        if (st.phase === 'discussion') { ensureMicStream(); syncMeshCalls(st); }
+        if (st.phase === 'discussion') { ensureMicStream(); if (localStream || micFailed) syncMeshCalls(st); }
         updateMicBtn();
     }
 
